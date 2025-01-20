@@ -1,19 +1,42 @@
 import elementpath
 
 from lxml import etree
-from timeit import timeit
+from time import time
 
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
-method = parser.method
-function = parser.function
+rcr = 0
+rce = 0
 
 
-@method(
-    function("gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean"))
+def print_time(name: str, start_time: float):
+    """
+    To be used like:
+
+    if print_time("funcname", tt):
+        # potentially run debugger here
+        pass
+
+    :return: if True, the time spent is "significant"
+    """
+    finish_time = time()
+    total_time = finish_time - start_time
+
+    if total_time > 0.05:  # significant
+        print(f"timed {name}: {total_time}")
+        return True
+
+    return False
+
+
+@parser.method(
+    parser.function(
+        "gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
+    )
 )
 def evaluate_gln_function(self, context=None):
+    print("gln")
     val = self.get_argument(context, default="", cls=str)
     weighted_sum = sum(
         num * (1 + (((index + 1) % 2) * 2))
@@ -22,8 +45,8 @@ def evaluate_gln_function(self, context=None):
     return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
 
 
-@method(
-    function(
+@parser.method(
+    parser.function(
         "slack",
         prefix="u",
         nargs=3,
@@ -31,6 +54,7 @@ def evaluate_gln_function(self, context=None):
     )
 )
 def evaluate_slack_function(self, context=None):
+    print("slack")
     exp = self.get_argument(context, default="", cls=elementpath.datatypes.Decimal)
     val = self.get_argument(
         context, index=1, default="", cls=elementpath.datatypes.Decimal
@@ -41,8 +65,10 @@ def evaluate_slack_function(self, context=None):
     return (exp + slack) >= val and (exp - slack) <= val
 
 
-@method(
-    function("mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean"))
+@parser.method(
+    parser.function(
+        "mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
+    )
 )
 def evaluate_mod11_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
@@ -53,8 +79,8 @@ def evaluate_mod11_function(self, context=None):
     return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
 
 
-@method(
-    function(
+@parser.method(
+    parser.function(
         "mod97-0208", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
     )
 )
@@ -63,8 +89,8 @@ def evaluate_mod97_0208_function(self, context=None):
     return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
 
 
-@method(
-    function(
+@parser.method(
+    parser.function(
         "checkCodiceIPA",
         prefix="u",
         nargs=1,
@@ -76,13 +102,13 @@ def evaluate_checkCodiceIPA_function(self, context=None):
     return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
 
 
-@method(
-    function(
+@parser.method(
+    parser.function(
         "checkCF", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
     )
 )
-@method(
-    function(
+@parser.method(
+    parser.function(
         "checkCF16", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
     )
 )
@@ -99,21 +125,21 @@ def evaluate_checkCF_function(self, context=None):
     return False
 
 
-@method(
-    function(
+@parser.method(
+    parser.function(
         "checkPIVA", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")
     )
 )
-@method(
-    function(
+@parser.method(
+    parser.function(
         "addPIVA",
         prefix="u",
         nargs=2,
         sequence_types=("xs:string", "xs:integer", "xs:integer"),
     )
 )
-@method(
-    function(
+@parser.method(
+    parser.function(
         "checkPIVAseIT", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")
     )
 )
@@ -156,8 +182,10 @@ def evaluate_checkPIVA_function(self, context=None):
     return False
 
 
-@method(
-    function("abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean"))
+@parser.method(
+    parser.function(
+        "abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
+    )
 )
 def evaluate_abn_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
@@ -173,8 +201,8 @@ def evaluate_abn_function(self, context=None):
     )
 
 
-@method(
-    function(
+@parser.method(
+    parser.function(
         "TinVerification",
         prefix="u",
         nargs=1,
@@ -192,6 +220,10 @@ def evaluate_TinVerification_function(self, context=None):
 class Element:
     def __init__(self, namespaces):
         self.namespaces = namespaces
+        self._children = []
+        self._variables = []
+        self._functions = []
+        self.run_c = 0
 
     def set_variable(self, name, path):
         self._variables.append(
@@ -209,6 +241,9 @@ class Element:
 
     def run(self, xml, variables_dict=None):
         # Evaluate the variables at the current level, and then run the children
+        global rce
+        rce += 1
+        tt = time()
         evaluated_variables = variables_dict and variables_dict.copy() or {}
         for name, selector in self._variables:
             evaluated_variables.update(
@@ -223,12 +258,16 @@ class Element:
                 )
                 warning += res_warning
                 fatal += res_fatal
+
+        print_time("Element.run", tt)
         return warning, fatal
 
 
 class Schematron(Element):
     @classmethod
     def from_sch(cls, sch):
+        tt = time()
+
         def set_vars(element, node):
             """Updates the given element object with the variables local
             to the particular node it corresponds to.
@@ -261,6 +300,8 @@ class Schematron(Element):
                         assertion.get("test"),
                         assertion.text,
                     )
+
+        print_time("Schematron.from_sch", tt)
         return schematron
 
     def __init__(self, namespaces=None, parent=None):
@@ -314,6 +355,9 @@ class Rule(Element):
 
     def run(self, xml, variables_dict=None):
         """This overides the Element run function"""
+        global rcr
+        tt = time()
+        rcr += 1
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
         for context_node in context_nodes:
@@ -338,6 +382,8 @@ class Rule(Element):
                         warning.append(f"[{assert_id}] {message}")
                     elif flag == "fatal":
                         fatal.append(f"[{assert_id}] {message}")
+
+        print_time("Rule.run", tt)
         return warning, fatal
 
     def _assert(self, assert_id, flag, test, message):
@@ -350,6 +396,8 @@ class Rule(Element):
             )
         )
 
+
+tta = time()
 
 PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
 peppol_schematron = Schematron.from_sch(etree.parse(PEPPOL_PATH).getroot())
@@ -370,3 +418,7 @@ if warning_out:
 if fatal_out:
     print("Fatal:")
     print(fatal_out)
+
+print_time("Total", tta)
+print("rcr:", rcr)
+print("rce:", rce)
