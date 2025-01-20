@@ -1,4 +1,8 @@
+import ipdb
 import elementpath
+
+from typing import List, Optional, Tuple
+from rich.pretty import pprint
 
 from lxml import etree
 from time import time
@@ -10,7 +14,7 @@ rcr = 0
 rce = 0
 
 
-def print_time(name: str, start_time: float):
+def print_time(name: str, start_time: float, force=False):
     """
     To be used like:
 
@@ -23,8 +27,8 @@ def print_time(name: str, start_time: float):
     finish_time = time()
     total_time = finish_time - start_time
 
-    if total_time > 0.05:  # significant
-        print(f"timed {name}: {total_time}")
+    if force or total_time > 0.05:  # significant
+        print(f"timed {name}: {total_time} (rcr={rcr})")
         return True
 
     return False
@@ -36,7 +40,6 @@ def print_time(name: str, start_time: float):
     )
 )
 def evaluate_gln_function(self, context=None):
-    print("gln")
     val = self.get_argument(context, default="", cls=str)
     weighted_sum = sum(
         num * (1 + (((index + 1) % 2) * 2))
@@ -54,7 +57,6 @@ def evaluate_gln_function(self, context=None):
     )
 )
 def evaluate_slack_function(self, context=None):
-    print("slack")
     exp = self.get_argument(context, default="", cls=elementpath.datatypes.Decimal)
     val = self.get_argument(
         context, index=1, default="", cls=elementpath.datatypes.Decimal
@@ -239,11 +241,10 @@ class Element:
             return self._variables
         return self._parent.variables + self._variables
 
-    def run(self, xml, variables_dict=None):
-        # Evaluate the variables at the current level, and then run the children
+    def run(self, xml, variables_dict: Optional[dict] = None):
+        """Evaluate the variables at the current level, and then run the children."""
         global rce
         rce += 1
-        tt = time()
         evaluated_variables = variables_dict and variables_dict.copy() or {}
         for name, selector in self._variables:
             evaluated_variables.update(
@@ -259,7 +260,6 @@ class Element:
                 warning += res_warning
                 fatal += res_fatal
 
-        print_time("Element.run", tt)
         return warning, fatal
 
 
@@ -286,10 +286,10 @@ class Schematron(Element):
         schematron = cls(namespaces=namespace_dict)
         set_vars(schematron, sch)
         for pattern_node in sch.findall("./pattern", namespaces=sch_namespace):
-            pattern = schematron.pattern(pattern_node.get("id"))
+            pattern = schematron.add_element_pattern(pattern_node.get("id"))
             set_vars(pattern, pattern_node)
             for rule_node in pattern_node.findall("./rule", namespaces=sch_namespace):
-                rule = pattern.rule(rule_node.get("context"))
+                rule = pattern.add_element_rule(rule_node.get("context"))
                 set_vars(rule, rule_node)
                 for assertion in rule_node.findall(
                     "./assert", namespaces=sch_namespace
@@ -312,12 +312,12 @@ class Schematron(Element):
         self._variables = []
         self._functions = []
 
-    def pattern(self, pattern_id=""):
-        self._children.append(Pattern(pattern_id, self.namespaces, self))
+    def add_element_pattern(self, pattern_id=""):
+        self._children.append(ElementPattern(pattern_id, self.namespaces, self))
         return self._children[-1]
 
 
-class Pattern(Element):
+class ElementPattern(Element):
     def __init__(self, pattern_id="", namespaces=None, parent=None):
         self.pattern_id = pattern_id
         self.namespaces = namespaces
@@ -327,12 +327,14 @@ class Pattern(Element):
         self._variables = []
         self._functions = []
 
-    def rule(self, context):
-        self._children.append(Rule(context, parent=self, namespaces=self.namespaces))
+    def add_element_rule(self, context):
+        self._children.append(
+            ElementRule(context, parent=self, namespaces=self.namespaces)
+        )
         return self._children[-1]
 
 
-class Rule(Element):
+class ElementRule(Element):
     def __init__(self, context, namespaces=None, parent=None):
         split_context = context.split("|")
         for i, or_context in enumerate(split_context):
@@ -351,18 +353,28 @@ class Rule(Element):
         self.context_selector = elementpath.Selector(
             self.context, namespaces=self.namespaces, parser=parser
         )
-        self._assertions = []  # list of 4 element tuples, consisting of assert_id, flag, test (selector), message
+        self._assertions: List[
+            Tuple[str, str, elementpath.Selector, str]
+        ] = []  # list of 4 element tuples, consisting of assert_id, flag, test (selector), message
 
     def run(self, xml, variables_dict=None):
         """This overides the Element run function"""
         global rcr
         tt = time()
         rcr += 1
+        totvar = 0
+        totasr = 0
+
+        # if rcr == 95:
+        #     ipdb.set_trace()
+
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
         for context_node in context_nodes:
             # Then evaluate the variables at this level
             evaluated_variables = variables_dict and variables_dict.copy() or {}
+
+            t2 = time()
             for name, selector in self._variables:
                 evaluated_variables.update(
                     {
@@ -372,6 +384,12 @@ class Rule(Element):
                     }
                 )
 
+            if rcr == 95:
+                print_time("update evaluated_variables", t2, force=True)
+                totvar += time() - t2
+                pprint(evaluated_variables)
+
+            t2 = time()
             # Run every assertion
             for assert_id, flag, selector, message in self._assertions:
                 res = selector.select(
@@ -383,7 +401,17 @@ class Rule(Element):
                     elif flag == "fatal":
                         fatal.append(f"[{assert_id}] {message}")
 
-        print_time("Rule.run", tt)
+            if rcr == 95:
+                print_time("run assertion             ", t2, force=True)
+                totasr += time() - t2
+
+        if print_time("Rule.run", tt):
+            # ipdb.set_trace()
+            pass
+
+        if rcr == 95:
+            pprint((totvar, totasr))
+            ipdb.set_trace()
         return warning, fatal
 
     def _assert(self, assert_id, flag, test, message):
