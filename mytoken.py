@@ -5,7 +5,6 @@ class AbstractToken:
 
 
 class CaptureToken(AbstractToken):
-
     def __str__(self):
         return f"</{self.tag_name}>"
 

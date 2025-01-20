@@ -9,6 +9,7 @@ class ParserTreeLeaf:
     def add_token(self, c, token):
         self.values[c] = token
 
+
 class ParserTree:
     def __init__(self, patterns):
         self.root = ParserTreeLeaf()
