@@ -1,11 +1,12 @@
-import ipdb
 import elementpath
-
-from typing import List, Optional, Tuple
-from rich.pretty import pprint
+import ipdb
+import re
 
 from lxml import etree
+from lxml.etree import _Element
+from rich.pretty import pprint
 from time import time
+from typing import List, Optional, Tuple
 
 
 parser = elementpath.XPath2Parser
@@ -28,7 +29,7 @@ def print_time(name: str, start_time: float, force=False):
     total_time = finish_time - start_time
 
     if force or total_time > 0.05:  # significant
-        print(f"timed {name}: {total_time} (rcr={rcr})")
+        # print(f"timed {name}: {total_time} (rcr={rcr})")
         return True
 
     return False
@@ -224,9 +225,7 @@ class Element:
         self.namespaces = namespaces
         self._children = []
         self._variables = []
-        self._functions = []
         self._parent = None
-        self.run_c = 0
 
     def set_variable(self, name, path):
         self._variables.append(
@@ -266,7 +265,7 @@ class Element:
 
 class ElementSchematron(Element):
     @classmethod
-    def from_sch(cls, sch):
+    def from_sch(cls, sch: _Element):
         tt = time()
 
         def set_vars(element, node):
@@ -277,7 +276,7 @@ class ElementSchematron(Element):
                 element.set_variable(var.get("name"), var.get("value"))
 
         # This is the namespace used to interpret the sch file
-        sch_namespace = {None: "http://purl.oclc.org/dsdl/schematron"}
+        sch_namespace = {"": "http://purl.oclc.org/dsdl/schematron"}
 
         # Generate the namespaces used to interpet the documents to be validated
         namespace_dict = {}
@@ -287,7 +286,7 @@ class ElementSchematron(Element):
         schematron = cls(namespaces=namespace_dict)
         set_vars(schematron, sch)
         for pattern_node in sch.findall("./pattern", namespaces=sch_namespace):
-            pattern = schematron.add_element_pattern(pattern_node.get("id"))
+            pattern = schematron.add_element_pattern(pattern_node.get("id") or "")
             set_vars(pattern, pattern_node)
             for rule_node in pattern_node.findall("./rule", namespaces=sch_namespace):
                 rule = pattern.add_element_rule(rule_node.get("context"))
@@ -295,14 +294,14 @@ class ElementSchematron(Element):
                 for assertion in rule_node.findall(
                     "./assert", namespaces=sch_namespace
                 ):
-                    rule._assert(
+                    rule.add_assert(
                         assertion.get("id"),
                         assertion.get("flag"),
                         assertion.get("test"),
                         assertion.text,
                     )
 
-        print_time("Schematron.from_sch", tt)
+        # print_time("Schematron.from_sch", tt)
         return schematron
 
     def __init__(
@@ -313,7 +312,6 @@ class ElementSchematron(Element):
 
         self._children: List[ElementPattern] = []
         self._variables = []
-        self._functions = []
 
     def add_element_pattern(self, pattern_id=""):
         self._children.append(ElementPattern(pattern_id, self.namespaces, self))
@@ -333,7 +331,6 @@ class ElementPattern(Element):
 
         self._children: List[ElementRule] = []
         self._variables = []
-        self._functions = []
 
     def add_element_rule(self, context):
         self._children.append(
@@ -360,7 +357,6 @@ class ElementRule(Element):
         self.namespaces = namespaces
 
         self._variables: List[Tuple[str, elementpath.Selector]] = []
-        self._functions = []
 
         self.context_selector = elementpath.Selector(
             context, namespaces=self.namespaces, parser=parser
@@ -393,8 +389,8 @@ class ElementRule(Element):
                     }
                 )
 
-            if rcr == 95:
-                print_time("update evaluated_variables", t2, force=True)
+            if rcr == 14:
+                # print_time("update evaluated_variables", t2, force=True)
                 totvar += time() - t2
                 # pprint(evaluated_variables)
 
@@ -402,28 +398,31 @@ class ElementRule(Element):
             # Run every assertion
             for assert_id, flag, selector, message in self._assertions:
                 res = selector.select(
-                    xml, item=context_node, variables=evaluated_variables
+                    context_node,
+                    variables=evaluated_variables,
                 )
                 if not res:
                     if flag == "warning":
                         warning.append(f"[{assert_id}] {message}")
                     elif flag == "fatal":
                         fatal.append(f"[{assert_id}] {message}")
+                        # ipdb.set_trace()
 
-            if rcr == 95:
-                print_time("run assertion             ", t2, force=True)
+            if rcr == 14:
+                # print_time("run assertion             ", t2, force=True)
                 totasr += time() - t2
 
         if print_time("Rule.run", tt):
             # ipdb.set_trace()
             pass
 
-        if rcr == 95:
-            pprint((totvar, totasr))
+        if rcr == 14:
+            pass
+            # pprint((totvar, totasr))
             # ipdb.set_trace()
         return warning, fatal
 
-    def _assert(self, assert_id, flag, test, message):
+    def add_assert(self, assert_id, flag, test, message):
         self._assertions.append(
             (
                 assert_id,
@@ -434,28 +433,34 @@ class ElementRule(Element):
         )
 
 
-tta = time()
-
 PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-peppol_schematron = ElementSchematron.from_sch(etree.parse(PEPPOL_PATH).getroot())
 CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-cen_schematron = ElementSchematron.from_sch(etree.parse(CEN_PATH).getroot())
 TEST_FILE_PATH = "INV_2024_00272_ubl_bis3.xml"
-doc = etree.parse(TEST_FILE_PATH).getroot()
 
-warning_out, fatal_out = [], []
-for schematron in (cen_schematron, peppol_schematron):
-    warning, fatal = schematron.run(doc)
-    warning_out += warning
-    fatal_out += fatal
 
-if warning_out:
-    print("Warning:")
-    pprint(warning_out)
-if fatal_out:
-    print("Fatal:")
-    pprint(fatal_out)
+def main():
+    tta = time()
 
-print_time("Total", tta)
-print("rcr:", rcr)
-print("rce:", rce)
+    peppol_schematron = ElementSchematron.from_sch(etree.parse(PEPPOL_PATH).getroot())
+    cen_schematron = ElementSchematron.from_sch(etree.parse(CEN_PATH).getroot())
+    doc = etree.parse(TEST_FILE_PATH).getroot()
+
+    warning_out, fatal_out = [], []
+    for schematron in (cen_schematron, peppol_schematron):
+        warning, fatal = schematron.run(doc)
+        warning_out += warning
+        fatal_out += fatal
+
+    if warning_out:
+        print("Warning:")
+        pprint(warning_out)
+    if fatal_out:
+        print("Fatal:")
+        pprint(fatal_out)
+
+    pprint(time() - tta)
+    print("rcr:", rcr)
+    print("rce:", rce)
+
+
+main()

@@ -14,7 +14,7 @@
   <cac:AdditionalDocumentReference>
     <cbc:ID>INV_2024_00272.pdf</cbc:ID>
     <cac:Attachment>
-      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2024_00272.pdf">if_empty_raise_fatal</cbc:EmbeddedDocumentBinaryObject>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2024_00272.pdf"></cbc:EmbeddedDocumentBinaryObject>
     </cac:Attachment>
   </cac:AdditionalDocumentReference>
   <cac:AccountingSupplierParty>
@@ -142,8 +142,8 @@
     </cac:Price>
   </cac:InvoiceLine>
   <cac:InvoiceLine>
-    <cbc:ID>2</cbc:ID>
-    <cbc:InvoicedQuantity unitCode="C62">2.0</cbc:InvoicedQuantity>
+    <!-- <cbc:ID>2</cbc:ID> -->
+    <!-- <cbc:InvoicedQuantity unitCode="C62">2.0</cbc:InvoicedQuantity> -->
     <cbc:LineExtensionAmount currencyID="DKK">1590.00</cbc:LineExtensionAmount>
     <cac:Item>
       <cbc:Description>[ET02] Elektrikertimer (1.+2. time)</cbc:Description>
