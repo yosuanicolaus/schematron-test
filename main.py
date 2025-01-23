@@ -2,6 +2,7 @@ import elementpath
 import ipdb
 import re
 
+from copy import deepcopy
 from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
@@ -29,7 +30,7 @@ def print_time(name: str, start_time: float, force=False):
     total_time = finish_time - start_time
 
     if force or total_time > 0.05:  # significant
-        # print(f"timed {name}: {total_time} (rcr={rcr})")
+        print(f"timed {name}: {total_time} (rcr={rcr})")
         return True
 
     return False
@@ -342,7 +343,7 @@ class ElementPattern(Element):
 class ElementRule(Element):
     def __init__(
         self,
-        context,
+        context: str,
         namespaces: Optional[dict] = None,
         parent: Optional[ElementPattern] = None,
     ):
@@ -365,36 +366,37 @@ class ElementRule(Element):
             Tuple[str, str, elementpath.Selector, str]
         ] = []  # list of 4 element tuples, consisting of assert_id, flag, test (selector), message
 
-    def run(self, xml, variables_dict=None):
+    def run(self, xml: _Element, variables_dict: Optional[dict] = None):
         """This overides the Element run function"""
         global rcr
         tt = time()
         rcr += 1
-        totvar = 0
-        totasr = 0
+
+        if not variables_dict:
+            variables_dict = {}
 
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
+
+        if self._variables:
+            shallow_root = deepcopy(xml)
+            shallow_root.clear()
+        else:
+            shallow_root = xml
+
         for context_node in context_nodes:
             # Then evaluate the variables at this level
-            evaluated_variables = variables_dict and variables_dict.copy() or {}
+            evaluated_variables = variables_dict.copy()
 
-            t2 = time()
-            for name, selector in self._variables:
-                evaluated_variables.update(
-                    {
-                        name: selector.select(
-                            xml, item=context_node, variables=evaluated_variables
-                        )
-                    }
-                )
+            if self._variables:
+                shallow_child = deepcopy(context_node)
+                shallow_root.append(shallow_child)
+                for name, selector in self._variables:
+                    evaluated_variables.update(
+                        {name: selector.select(shallow_root, item=shallow_child)}
+                    )
+                shallow_root.clear()
 
-            if rcr == 14:
-                # print_time("update evaluated_variables", t2, force=True)
-                totvar += time() - t2
-                # pprint(evaluated_variables)
-
-            t2 = time()
             # Run every assertion
             for assert_id, flag, selector, message in self._assertions:
                 res = selector.select(
@@ -408,18 +410,10 @@ class ElementRule(Element):
                         fatal.append(f"[{assert_id}] {message}")
                         # ipdb.set_trace()
 
-            if rcr == 14:
-                # print_time("run assertion             ", t2, force=True)
-                totasr += time() - t2
-
         if print_time("Rule.run", tt):
             # ipdb.set_trace()
             pass
 
-        if rcr == 14:
-            pass
-            # pprint((totvar, totasr))
-            # ipdb.set_trace()
         return warning, fatal
 
     def add_assert(self, assert_id, flag, test, message):
