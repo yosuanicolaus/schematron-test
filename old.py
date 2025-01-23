@@ -1,3 +1,4 @@
+import sys
 import elementpath
 
 from lxml import etree
@@ -255,25 +256,66 @@ class Rule(Element):
     def _assert(self, assert_id, flag, test, message):
         self._assertions.append((assert_id, flag, elementpath.Selector(test, namespaces=self.namespaces, parser=parser), message))
 
-tta = time()
-PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-peppol_schematron = Schematron.from_sch(etree.parse(PEPPOL_PATH).getroot())
-CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-cen_schematron = Schematron.from_sch(etree.parse(CEN_PATH).getroot())
-TEST_FILE_PATH = "INV_2024_00272_ubl_bis3.xml"
-doc = etree.parse(TEST_FILE_PATH).getroot()
 
-warning_out, fatal_out = [], []
-for schematron in (cen_schematron, peppol_schematron):
-    warning, fatal = schematron.run(doc)
-    warning_out += warning
-    fatal_out += fatal
+SCHEMATRON_CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
+SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
+SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
+SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
+SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
+TEST_INVOICE_PATH = "test_files/invoice.xml"
+TEST_NLCIUS_PATH = "test_files/nlcius.xml"
+TEST_EUSR_PATH = "test_files/eusr.xml"
+TEST_TSR_PATH = "test_files/tsr.xml"
 
-if warning_out:
-    print("Warning:")
-    pprint(warning_out)
-if fatal_out:
-    print("Fatal:")
-    pprint(fatal_out)
 
-pprint(time() - tta)
+def run_schematron(name: str):
+    if name == "peppol":
+        cen_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
+        peppol_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_PEPPOL_PATH).getroot())
+        doc = etree.parse(TEST_INVOICE_PATH).getroot()
+
+        warning_1, fatal_1 = cen_schematron.run(doc)
+        warning_2, fatal_2 = peppol_schematron.run(doc)
+        return warning_1 + warning_2, fatal_1 + fatal_2
+
+    elif name == "nlcius":
+        cen_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
+        nlcius_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_NLCIUS_PATH).getroot())
+        doc = etree.parse(TEST_INVOICE_PATH).getroot()
+
+        warning_1, fatal_1 = cen_schematron.run(doc)
+        warning_2, fatal_2 = nlcius_schematron.run(doc)
+        return warning_1 + warning_2, fatal_1 + fatal_2
+
+    elif name == "eusr":
+        eusr_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_EUSR_PATH).getroot())
+        doc = etree.parse(TEST_EUSR_PATH).getroot()
+        warning, fatal = eusr_schematron.run(doc)
+        return warning, fatal
+
+    elif name == "tsr":
+        eusr_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_TSR_PATH).getroot())
+        doc = etree.parse(TEST_TSR_PATH).getroot()
+        warning, fatal = eusr_schematron.run(doc)
+        return warning, fatal
+
+    else:
+        raise Exception("Invalid schematron argument!")
+
+
+def main():
+    tta = time()
+    warning_out, fatal_out = run_schematron(sys.argv[1])
+
+    if warning_out:
+        print("Warning:")
+        pprint(warning_out)
+    if fatal_out:
+        print("Fatal:")
+        pprint(fatal_out)
+
+    pprint(time() - tta)
+
+
+if __name__ == "__main__":
+    main()

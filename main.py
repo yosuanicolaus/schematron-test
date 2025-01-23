@@ -1,14 +1,13 @@
-import elementpath
-import ipdb
 import re
-
+import sys
 from copy import deepcopy
-from lxml import etree
-from lxml.etree import _Element
-from rich.pretty import pprint
 from time import time
 from typing import List, Optional, Tuple
 
+import elementpath
+from lxml import etree
+from lxml.etree import _Element
+from rich.pretty import pprint
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
@@ -16,137 +15,61 @@ rcr = 0
 rce = 0
 
 
-def print_time(name: str, start_time: float, force=False):
-    """
-    To be used like:
-
-    if print_time("funcname", tt):
-        # potentially run debugger here
-        pass
-
-    :return: if True, the time spent is "significant"
-    """
-    finish_time = time()
-    total_time = finish_time - start_time
-
-    if force or total_time > 0.05:  # significant
-        print(f"timed {name}: {total_time} (rcr={rcr})")
-        return True
-
-    return False
+################################################################################
+# Parser Functions
+################################################################################
 
 
-@parser.method(
-    parser.function(
-        "gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
-    )
-)
+@parser.method(parser.function("gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_gln_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
-    weighted_sum = sum(
-        num * (1 + (((index + 1) % 2) * 2))
-        for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1])
-    )
+    weighted_sum = sum(num * (1 + (((index + 1) % 2) * 2)) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
 
 
-@parser.method(
-    parser.function(
-        "slack",
-        prefix="u",
-        nargs=3,
-        sequence_types=("xs:decimal", "xs:decimal", "xs:decimal", "xs:boolean"),
-    )
-)
+@parser.method(parser.function("slack", prefix="u", nargs=3, sequence_types=("xs:decimal", "xs:decimal", "xs:decimal", "xs:boolean")))
 def evaluate_slack_function(self, context=None):
     exp = self.get_argument(context, default="", cls=elementpath.datatypes.Decimal)
-    val = self.get_argument(
-        context, index=1, default="", cls=elementpath.datatypes.Decimal
-    )
-    slack = self.get_argument(
-        context, index=2, default="", cls=elementpath.datatypes.Decimal
-    )
+    val = self.get_argument(context, index=1, default="", cls=elementpath.datatypes.Decimal)
+    slack = self.get_argument(context, index=2, default="", cls=elementpath.datatypes.Decimal)
     return (exp + slack) >= val and (exp - slack) <= val
 
 
-@parser.method(
-    parser.function(
-        "mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
-    )
-)
+@parser.method(parser.function("mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_mod11_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
-    weighted_sum = sum(
-        num * ((index % 6) + 2)
-        for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1])
-    )
+    weighted_sum = sum(num * ((index % 6) + 2) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
 
 
-@parser.method(
-    parser.function(
-        "mod97-0208", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
-    )
-)
+@parser.method(parser.function("mod97-0208", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_mod97_0208_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)[2:]
     return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
 
 
-@parser.method(
-    parser.function(
-        "checkCodiceIPA",
-        prefix="u",
-        nargs=1,
-        sequence_types=("xs:string?", "xs:boolean"),
-    )
-)
+@parser.method(parser.function("checkCodiceIPA", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_checkCodiceIPA_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
 
 
-@parser.method(
-    parser.function(
-        "checkCF", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
-    )
-)
-@parser.method(
-    parser.function(
-        "checkCF16", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
-    )
-)
+@parser.method(parser.function("checkCF", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@parser.method(parser.function("checkCF16", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_checkCF_function(self, context=None):
     """Check the characters of the codice fiscale to ensure it conforms to either the 16 or 11 character standards"""
     val = self.get_argument(context, default="", cls=str)
     if self.symbol == "checkCF16" or len(val) == 16:
-        return bool(
-            re.fullmatch(r"[a-zA-Z]{6}\d{2}[a-zA-Z]\d{2}[a-zA-Z\d]{3}\d[a-zA-Z]", val)
-        )
+        return bool(re.fullmatch(r"[a-zA-Z]{6}\d{2}[a-zA-Z]\d{2}[a-zA-Z\d]{3}\d[a-zA-Z]", val))
     elif len(val) == 11:
         return val.isnumeric()
 
     return False
 
 
-@parser.method(
-    parser.function(
-        "checkPIVA", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")
-    )
-)
-@parser.method(
-    parser.function(
-        "addPIVA",
-        prefix="u",
-        nargs=2,
-        sequence_types=("xs:string", "xs:integer", "xs:integer"),
-    )
-)
-@parser.method(
-    parser.function(
-        "checkPIVAseIT", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")
-    )
-)
+@parser.method(parser.function("checkPIVA", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
+@parser.method(parser.function("addPIVA", prefix="u", nargs=2, sequence_types=("xs:string", "xs:integer", "xs:integer")))
+@parser.method(parser.function("checkPIVAseIT", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
 def evaluate_checkPIVA_function(self, context=None):
     """Recursive implementation of a version of the luhn 10 algorithm used for checking partita IVA
 
@@ -186,39 +109,18 @@ def evaluate_checkPIVA_function(self, context=None):
     return False
 
 
-@parser.method(
-    parser.function(
-        "abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")
-    )
-)
+@parser.method(parser.function("abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_abn_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     subtractors = [49] + [48] * 10
     multipliers = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-    return bool(
-        sum(
-            (ord(character) - subtractors[index]) * multipliers[index]
-            for index, character in enumerate(val)
-        )
-        % 89
-        == 0
-    )
+    return bool(sum((ord(character) - subtractors[index]) * multipliers[index] for index, character in enumerate(val)) % 89 == 0)
 
 
-@parser.method(
-    parser.function(
-        "TinVerification",
-        prefix="u",
-        nargs=1,
-        sequence_types=("xs:string", "xs:boolean"),
-    )
-)
+@parser.method(parser.function("TinVerification", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
 def evaluate_TinVerification_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
-    return sum(
-        int(character) * (2 ** (index + 1))
-        for index, character in enumerate(val[:8][::-1])
-    ) % 11 % 10 == int(val[-1])
+    return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
 class Element:
@@ -242,22 +144,18 @@ class Element:
             return self._variables
         return self._parent.variables + self._variables
 
-    def run(self, xml, variables_dict: Optional[dict] = None):
+    def run(self, xml, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
         global rce
         rce += 1
         evaluated_variables = variables_dict and variables_dict.copy() or {}
         for name, selector in self._variables:
-            evaluated_variables.update(
-                {name: selector.select(xml, variables=evaluated_variables)}
-            )
+            evaluated_variables.update({name: selector.select(xml, variables=evaluated_variables)})
 
         warning, fatal = [], []
         if self._children:
             for child in self._children:
-                res_warning, res_fatal = child.run(
-                    xml, variables_dict=evaluated_variables
-                )
+                res_warning, res_fatal = child.run(xml, variables_dict=evaluated_variables)
                 warning += res_warning
                 fatal += res_fatal
 
@@ -292,9 +190,7 @@ class ElementSchematron(Element):
             for rule_node in pattern_node.findall("./rule", namespaces=sch_namespace):
                 rule = pattern.add_element_rule(rule_node.get("context"))
                 set_vars(rule, rule_node)
-                for assertion in rule_node.findall(
-                    "./assert", namespaces=sch_namespace
-                ):
+                for assertion in rule_node.findall("./assert", namespaces=sch_namespace):
                     rule.add_assert(
                         assertion.get("id"),
                         assertion.get("flag"),
@@ -305,9 +201,7 @@ class ElementSchematron(Element):
         # print_time("Schematron.from_sch", tt)
         return schematron
 
-    def __init__(
-        self, namespaces: Optional[dict] = None, parent: Optional[Element] = None
-    ):
+    def __init__(self, namespaces: Optional[dict] = None, parent: Optional[Element] = None):
         self.namespaces = namespaces
         self._parent = parent
 
@@ -334,9 +228,7 @@ class ElementPattern(Element):
         self._variables = []
 
     def add_element_rule(self, context):
-        self._children.append(
-            ElementRule(context, namespaces=self.namespaces, parent=self)
-        )
+        self._children.append(ElementRule(context, namespaces=self.namespaces, parent=self))
         return self._children[-1]
 
 
@@ -359,9 +251,7 @@ class ElementRule(Element):
 
         self._variables: List[Tuple[str, elementpath.Selector]] = []
 
-        self.context_selector = elementpath.Selector(
-            context, namespaces=self.namespaces, parser=parser
-        )
+        self.context_selector = elementpath.Selector(context, namespaces=self.namespaces, parser=parser)
         self._assertions: List[
             Tuple[str, str, elementpath.Selector, str]
         ] = []  # list of 4 element tuples, consisting of assert_id, flag, test (selector), message
@@ -369,12 +259,9 @@ class ElementRule(Element):
     def run(self, xml: _Element, variables_dict: Optional[dict] = None):
         """This overides the Element run function"""
         global rcr
-        tt = time()
         rcr += 1
-
-        if not variables_dict:
-            variables_dict = {}
-
+        tt = time()
+        evaluated_variables = variables_dict and variables_dict.copy() or {}
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
 
@@ -385,16 +272,15 @@ class ElementRule(Element):
             shallow_root = xml
 
         for context_node in context_nodes:
-            # Then evaluate the variables at this level
-            evaluated_variables = variables_dict.copy()
-
+            # If the rule has additional variable, evaluate them here.
+            # To save performance, we create a new "shallow" element containing just the root and the context node,
+            # And do the select query on this new XML element instead.
             if self._variables:
+                evaluated_variables = variables_dict and variables_dict.copy() or {}
                 shallow_child = deepcopy(context_node)
                 shallow_root.append(shallow_child)
                 for name, selector in self._variables:
-                    evaluated_variables.update(
-                        {name: selector.select(shallow_root, item=shallow_child)}
-                    )
+                    evaluated_variables.update({name: selector.select(shallow_root, item=shallow_child)})
                 shallow_root.clear()
 
             # Run every assertion
@@ -410,10 +296,7 @@ class ElementRule(Element):
                         fatal.append(f"[{assert_id}] {message}")
                         # ipdb.set_trace()
 
-        if print_time("Rule.run", tt):
-            # ipdb.set_trace()
-            pass
-
+        print_time("Rule.run", tt)
         return warning, fatal
 
     def add_assert(self, assert_id, flag, test, message):
@@ -427,34 +310,92 @@ class ElementRule(Element):
         )
 
 
-PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-TEST_FILE_PATH = "INV_2024_00272_ubl_bis3.xml"
+def print_time(name: str, start_time: float, force=False):
+    """
+    To be used like:
+
+    if print_time("funcname", tt):
+        # potentially run debugger here
+        pass
+
+    :return: if True, the time spent is "significant"
+    """
+    finish_time = time()
+    total_time = finish_time - start_time
+
+    if force or total_time > 0.05:  # significant
+        print(f"timed {name}: {total_time} (rcr={rcr})")
+        return True
+
+    return False
+
+
+SCHEMATRON_CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
+SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
+SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
+SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
+SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
+TEST_INVOICE_PATH = "test_files/invoice.xml"
+TEST_NLCIUS_PATH = "test_files/nlcius.xml"
+TEST_EUSR_PATH = "test_files/eusr.xml"
+TEST_TSR_PATH = "test_files/tsr.xml"
+
+
+def run_schematron(name: str):
+    if name == "peppol":
+        cen_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
+        peppol_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_PEPPOL_PATH).getroot())
+        doc = etree.parse(TEST_INVOICE_PATH).getroot()
+
+        warning_1, fatal_1 = cen_schematron.run(doc)
+        warning_2, fatal_2 = peppol_schematron.run(doc)
+        return warning_1 + warning_2, fatal_1 + fatal_2
+
+    elif name == "nlcius":
+        cen_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
+        nlcius_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_NLCIUS_PATH).getroot())
+        doc = etree.parse(TEST_INVOICE_PATH).getroot()
+
+        warning_1, fatal_1 = cen_schematron.run(doc)
+        warning_2, fatal_2 = nlcius_schematron.run(doc)
+        return warning_1 + warning_2, fatal_1 + fatal_2
+
+    elif name == "eusr":
+        eusr_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_EUSR_PATH).getroot())
+        doc = etree.parse(TEST_EUSR_PATH).getroot()
+        warning, fatal = eusr_schematron.run(doc)
+        return warning, fatal
+
+    elif name == "tsr":
+        eusr_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_TSR_PATH).getroot())
+        doc = etree.parse(TEST_TSR_PATH).getroot()
+        warning, fatal = eusr_schematron.run(doc)
+        return warning, fatal
+
+    else:
+        raise Exception("Invalid schematron argument!")
 
 
 def main():
+    """
+    Must be run with one argument. Accepted values: peppol, nlcius, eusr, tsr
+    """
+    to_run = sys.argv[1]
+    print("Running", to_run.upper())
     tta = time()
 
-    peppol_schematron = ElementSchematron.from_sch(etree.parse(PEPPOL_PATH).getroot())
-    cen_schematron = ElementSchematron.from_sch(etree.parse(CEN_PATH).getroot())
-    doc = etree.parse(TEST_FILE_PATH).getroot()
-
-    warning_out, fatal_out = [], []
-    for schematron in (cen_schematron, peppol_schematron):
-        warning, fatal = schematron.run(doc)
-        warning_out += warning
-        fatal_out += fatal
-
-    if warning_out:
+    warning, fatal = run_schematron(to_run)
+    if warning:
         print("Warning:")
-        pprint(warning_out)
-    if fatal_out:
+        pprint(warning)
+    if fatal:
         print("Fatal:")
-        pprint(fatal_out)
+        pprint(fatal)
 
     pprint(time() - tta)
-    print("rcr:", rcr)
-    print("rce:", rce)
+    print(f"total rcr: {rcr}")
+    print(f"total rce: {rce}")
 
 
-main()
+if __name__ == "__main__":
+    main()
