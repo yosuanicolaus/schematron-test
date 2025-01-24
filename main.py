@@ -2,12 +2,14 @@ import re
 import sys
 from copy import deepcopy
 from time import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import elementpath
 from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
+
+from myconst import TEST_MAP
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
@@ -124,40 +126,33 @@ def evaluate_TinVerification_function(self, context=None):
 
 
 class Element:
-    def __init__(self, namespaces):
+    def __init__(self, namespaces: dict[str, str], parent: Optional["Element"] = None):
         self.namespaces = namespaces
-        self._children = []
-        self._variables = []
-        self._parent = None
+        self._children: List[Union[Element, ElementPattern, ElementRule]] = []
+        self._variables: List[Tuple[str, elementpath.Selector]] = []
+        self._parent: Optional[Element] = parent
 
-    def set_variable(self, name, path):
-        self._variables.append(
-            (
-                name,
-                elementpath.Selector(path, namespaces=self.namespaces, parser=parser),
-            )
-        )
+    def add_variable(self, name, path):
+        self._variables.append((name, elementpath.Selector(path, namespaces=self.namespaces, parser=parser)))
 
     @property
     def variables(self):
-        if not self._parent:
+        if self._parent:
+            return self._parent.variables + self._variables
+        else:
             return self._variables
-        return self._parent.variables + self._variables
 
     def run(self, xml, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
-        global rce
-        rce += 1
         evaluated_variables = variables_dict and variables_dict.copy() or {}
         for name, selector in self._variables:
             evaluated_variables.update({name: selector.select(xml, variables=evaluated_variables)})
 
         warning, fatal = [], []
-        if self._children:
-            for child in self._children:
-                res_warning, res_fatal = child.run(xml, variables_dict=evaluated_variables)
-                warning += res_warning
-                fatal += res_fatal
+        for child in self._children:
+            res_warning, res_fatal = child.run(xml, variables_dict=evaluated_variables)
+            warning += res_warning
+            fatal += res_fatal
 
         return warning, fatal
 
@@ -165,14 +160,23 @@ class Element:
 class ElementSchematron(Element):
     @classmethod
     def from_sch(cls, sch: _Element):
-        tt = time()
+        """
+        Construct the Element tree by traversing the schematron and appending all necessary child elements to their own `_children`.
+        The Element tree will then look like this:
 
-        def set_vars(element, node):
+        ElementSchematron
+            ElementPattern
+                ElementRule
+                ...
+            ...
+        """
+
+        def add_all_variable(element: Element, node: _Element):
             """Updates the given element object with the variables local
             to the particular node it corresponds to.
             """
             for var in node.findall("./let", namespaces=sch_namespace):
-                element.set_variable(var.get("name"), var.get("value"))
+                element.add_variable(var.get("name"), var.get("value"))
 
         # This is the namespace used to interpret the sch file
         sch_namespace = {"": "http://purl.oclc.org/dsdl/schematron"}
@@ -182,14 +186,16 @@ class ElementSchematron(Element):
         for ns in sch.findall("./ns", namespaces=sch_namespace):
             namespace_dict.update({ns.get("prefix"): ns.get("uri")})
 
-        schematron = cls(namespaces=namespace_dict)
-        set_vars(schematron, sch)
+        schematron = cls(namespaces=namespace_dict, parent=None)
+        add_all_variable(schematron, sch)
+
         for pattern_node in sch.findall("./pattern", namespaces=sch_namespace):
             pattern = schematron.add_element_pattern(pattern_node.get("id") or "")
-            set_vars(pattern, pattern_node)
+            add_all_variable(pattern, pattern_node)
+
             for rule_node in pattern_node.findall("./rule", namespaces=sch_namespace):
                 rule = pattern.add_element_rule(rule_node.get("context"))
-                set_vars(rule, rule_node)
+                add_all_variable(rule, rule_node)
                 for assertion in rule_node.findall("./assert", namespaces=sch_namespace):
                     rule.add_assert(
                         assertion.get("id"),
@@ -197,117 +203,77 @@ class ElementSchematron(Element):
                         assertion.get("test"),
                         assertion.text,
                     )
-
-        # print_time("Schematron.from_sch", tt)
         return schematron
 
-    def __init__(self, namespaces: Optional[dict] = None, parent: Optional[Element] = None):
-        self.namespaces = namespaces
-        self._parent = parent
-
-        self._children: List[ElementPattern] = []
-        self._variables = []
-
-    def add_element_pattern(self, pattern_id=""):
+    def add_element_pattern(self, pattern_id="") -> "ElementPattern":
         self._children.append(ElementPattern(pattern_id, self.namespaces, self))
         return self._children[-1]
 
 
 class ElementPattern(Element):
-    def __init__(
-        self,
-        pattern_id="",
-        namespaces: Optional[dict] = None,
-        parent: Optional[ElementSchematron] = None,
-    ):
+    def __init__(self, pattern_id: str, namespaces: dict[str, str], parent: ElementSchematron):
+        super().__init__(namespaces=namespaces, parent=parent)
         self.pattern_id = pattern_id
-        self.namespaces = namespaces
-        self._parent = parent
 
-        self._children: List[ElementRule] = []
-        self._variables = []
-
-    def add_element_rule(self, context):
+    def add_element_rule(self, context: str) -> "ElementRule":
         self._children.append(ElementRule(context, namespaces=self.namespaces, parent=self))
         return self._children[-1]
 
 
 class ElementRule(Element):
-    def __init__(
-        self,
-        context: str,
-        namespaces: Optional[dict] = None,
-        parent: Optional[ElementPattern] = None,
-    ):
+    def __init__(self, context: str, namespaces: dict, parent: ElementPattern):
+        super().__init__(namespaces=namespaces, parent=parent)
         split_context = context.split("|")
         for i, or_context in enumerate(split_context):
             or_context = or_context.strip()
             if not or_context.startswith("/"):
                 split_context[i] = f"//{or_context}"
         context = " | ".join(split_context)
-
-        self._parent = parent
-        self.namespaces = namespaces
-
-        self._variables: List[Tuple[str, elementpath.Selector]] = []
-
         self.context_selector = elementpath.Selector(context, namespaces=self.namespaces, parser=parser)
-        self._assertions: List[
-            Tuple[str, str, elementpath.Selector, str]
-        ] = []  # list of 4 element tuples, consisting of assert_id, flag, test (selector), message
+
+        # List of 4 element tuples, consisting of assert_id, flag, test (selector), message
+        self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
 
     def run(self, xml: _Element, variables_dict: Optional[dict] = None):
-        """This overides the Element run function"""
-        global rcr
-        rcr += 1
-        tt = time()
+        # OVERRIDES Element (ElementRule is at the bottom of the Element tree)
         evaluated_variables = variables_dict and variables_dict.copy() or {}
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
 
         if self._variables:
-            shallow_root = deepcopy(xml)
-            shallow_root.clear()
+            # To save performance, only copy the XML if we need to
+            shallow_xml = deepcopy(xml)
+            shallow_xml.clear()
         else:
-            shallow_root = xml
+            shallow_xml = etree.Element("unused")
 
         for context_node in context_nodes:
-            # If the rule has additional variable, evaluate them here.
+            # If the rule has additional variable, we evaluate them here.
             # To save performance, we create a new "shallow" element containing just the root and the context node,
-            # And do the select query on this new XML element instead.
+            # And do the expensive select query on this new small XML element instead.
             if self._variables:
                 evaluated_variables = variables_dict and variables_dict.copy() or {}
-                shallow_child = deepcopy(context_node)
-                shallow_root.append(shallow_child)
+                shallow_context = deepcopy(context_node)
+                shallow_xml.append(shallow_context)
                 for name, selector in self._variables:
-                    evaluated_variables.update({name: selector.select(shallow_root, item=shallow_child)})
-                shallow_root.clear()
+                    selected_value = selector.select(root=shallow_xml, item=shallow_context, variables=evaluated_variables)
+                    evaluated_variables.update({name: selected_value})
+                shallow_xml.clear()
 
-            # Run every assertion
+            # Run every assertion to the context node
             for assert_id, flag, selector, message in self._assertions:
-                res = selector.select(
-                    context_node,
-                    variables=evaluated_variables,
-                )
+                res = selector.select(context_node, variables=evaluated_variables)
                 if not res:
                     if flag == "warning":
                         warning.append(f"[{assert_id}] {message}")
                     elif flag == "fatal":
                         fatal.append(f"[{assert_id}] {message}")
-                        # ipdb.set_trace()
 
-        print_time("Rule.run", tt)
         return warning, fatal
 
-    def add_assert(self, assert_id, flag, test, message):
-        self._assertions.append(
-            (
-                assert_id,
-                flag,
-                elementpath.Selector(test, namespaces=self.namespaces, parser=parser),
-                message,
-            )
-        )
+    def add_assert(self, assert_id: str, flag: str, test: str, message: str):
+        test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
+        self._assertions.append((assert_id, flag, test_selector, message))
 
 
 def print_time(name: str, start_time: float, force=False):
@@ -330,68 +296,31 @@ def print_time(name: str, start_time: float, force=False):
     return False
 
 
-SCHEMATRON_CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
-SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
-SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
-TEST_INVOICE_PATH = "test_files/invoice.xml"
-TEST_NLCIUS_PATH = "test_files/nlcius.xml"
-TEST_EUSR_PATH = "test_files/eusr.xml"
-TEST_TSR_PATH = "test_files/tsr.xml"
-
-
 def run_schematron(name: str):
-    if name == "peppol":
-        cen_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
-        peppol_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_PEPPOL_PATH).getroot())
-        doc = etree.parse(TEST_INVOICE_PATH).getroot()
-
-        warning_1, fatal_1 = cen_schematron.run(doc)
-        warning_2, fatal_2 = peppol_schematron.run(doc)
-        return warning_1 + warning_2, fatal_1 + fatal_2
-
-    elif name == "nlcius":
-        cen_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
-        nlcius_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_NLCIUS_PATH).getroot())
-        doc = etree.parse(TEST_INVOICE_PATH).getroot()
-
-        warning_1, fatal_1 = cen_schematron.run(doc)
-        warning_2, fatal_2 = nlcius_schematron.run(doc)
-        return warning_1 + warning_2, fatal_1 + fatal_2
-
-    elif name == "eusr":
-        eusr_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_EUSR_PATH).getroot())
-        doc = etree.parse(TEST_EUSR_PATH).getroot()
-        warning, fatal = eusr_schematron.run(doc)
-        return warning, fatal
-
-    elif name == "tsr":
-        eusr_schematron = ElementSchematron.from_sch(etree.parse(SCHEMATRON_TSR_PATH).getroot())
-        doc = etree.parse(TEST_TSR_PATH).getroot()
-        warning, fatal = eusr_schematron.run(doc)
-        return warning, fatal
-
-    else:
+    if name not in TEST_MAP:
         raise Exception("Invalid schematron argument!")
+
+    schematron_paths = TEST_MAP[name]["schematron_paths"]
+    test_file_path = TEST_MAP[name]["test_file_path"]
+
+    for schematron_path in schematron_paths:
+        print(f"Running {schematron_path}")
+        schematron = ElementSchematron.from_sch(etree.parse(schematron_path).getroot())
+        doc = etree.parse(test_file_path).getroot()
+        warning, fatal = schematron.run(doc)
+        if warning:
+            print("Warning:")
+            pprint(warning)
+        if fatal:
+            print("Fatal:")
+            pprint(fatal)
 
 
 def main():
-    """
-    Must be run with one argument. Accepted values: peppol, nlcius, eusr, tsr
-    """
     to_run = sys.argv[1]
     print("Running", to_run.upper())
     tta = time()
-
-    warning, fatal = run_schematron(to_run)
-    if warning:
-        print("Warning:")
-        pprint(warning)
-    if fatal:
-        print("Fatal:")
-        pprint(fatal)
-
+    run_schematron(to_run)
     pprint(time() - tta)
     print(f"total rcr: {rcr}")
     print(f"total rce: {rce}")

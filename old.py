@@ -1,9 +1,11 @@
 import sys
-import elementpath
+from time import time
 
+import elementpath
 from lxml import etree
 from rich.pretty import pprint
-from time import time
+
+from myconst import TEST_MAP
 
 
 parser = elementpath.XPath2Parser
@@ -257,63 +259,30 @@ class Rule(Element):
         self._assertions.append((assert_id, flag, elementpath.Selector(test, namespaces=self.namespaces, parser=parser), message))
 
 
-SCHEMATRON_CEN_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
-SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
-SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
-SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
-TEST_INVOICE_PATH = "test_files/invoice.xml"
-TEST_NLCIUS_PATH = "test_files/nlcius.xml"
-TEST_EUSR_PATH = "test_files/eusr.xml"
-TEST_TSR_PATH = "test_files/tsr.xml"
-
 
 def run_schematron(name: str):
-    if name == "peppol":
-        cen_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
-        peppol_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_PEPPOL_PATH).getroot())
-        doc = etree.parse(TEST_INVOICE_PATH).getroot()
-
-        warning_1, fatal_1 = cen_schematron.run(doc)
-        warning_2, fatal_2 = peppol_schematron.run(doc)
-        return warning_1 + warning_2, fatal_1 + fatal_2
-
-    elif name == "nlcius":
-        cen_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_CEN_PATH).getroot())
-        nlcius_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_NLCIUS_PATH).getroot())
-        doc = etree.parse(TEST_INVOICE_PATH).getroot()
-
-        warning_1, fatal_1 = cen_schematron.run(doc)
-        warning_2, fatal_2 = nlcius_schematron.run(doc)
-        return warning_1 + warning_2, fatal_1 + fatal_2
-
-    elif name == "eusr":
-        eusr_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_EUSR_PATH).getroot())
-        doc = etree.parse(TEST_EUSR_PATH).getroot()
-        warning, fatal = eusr_schematron.run(doc)
-        return warning, fatal
-
-    elif name == "tsr":
-        eusr_schematron = Schematron.from_sch(etree.parse(SCHEMATRON_TSR_PATH).getroot())
-        doc = etree.parse(TEST_TSR_PATH).getroot()
-        warning, fatal = eusr_schematron.run(doc)
-        return warning, fatal
-
-    else:
+    if name not in TEST_MAP:
         raise Exception("Invalid schematron argument!")
+
+    schematron_paths = TEST_MAP[name]["schematron_paths"]
+    test_file_path = TEST_MAP[name]["test_file_path"]
+
+    for schematron_path in schematron_paths:
+        print(f"Running {schematron_path}")
+        schematron = Schematron.from_sch(etree.parse(schematron_path).getroot())
+        doc = etree.parse(test_file_path).getroot()
+        warning, fatal = schematron.run(doc)
+        if warning:
+            print("Warning:")
+            pprint(warning)
+        if fatal:
+            print("Fatal:")
+            pprint(fatal)
 
 
 def main():
     tta = time()
-    warning_out, fatal_out = run_schematron(sys.argv[1])
-
-    if warning_out:
-        print("Warning:")
-        pprint(warning_out)
-    if fatal_out:
-        print("Fatal:")
-        pprint(fatal_out)
-
+    run_schematron(sys.argv[1])
     pprint(time() - tta)
 
 
