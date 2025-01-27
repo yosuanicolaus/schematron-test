@@ -9,7 +9,7 @@ from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
 
-from myconst import TEST_MAP
+from myconst import INVOICE_LINE_TAG, PATH_ROOT_MAP, TEST_MAP
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
@@ -131,6 +131,7 @@ class Element:
         self._children: List[Union[Element, ElementPattern, ElementRule]] = []
         self._variables: List[Tuple[str, elementpath.Selector]] = []
         self._parent: Optional[Element] = parent
+        self.root_name: Optional[str] = parent and parent.root_name
 
     def add_variable(self, name, path):
         self._variables.append((name, elementpath.Selector(path, namespaces=self.namespaces, parser=parser)))
@@ -159,7 +160,7 @@ class Element:
 
 class ElementSchematron(Element):
     @classmethod
-    def from_sch(cls, sch: _Element):
+    def from_sch(cls, sch: _Element, root_name: str):
         """
         Construct the Element tree by traversing the schematron and appending all necessary child elements to their own `_children`.
         The Element tree will then look like this:
@@ -187,6 +188,7 @@ class ElementSchematron(Element):
             namespace_dict.update({ns.get("prefix"): ns.get("uri")})
 
         schematron = cls(namespaces=namespace_dict, parent=None)
+        schematron.root_name = root_name
         add_all_variable(schematron, sch)
 
         for pattern_node in sch.findall("./pattern", namespaces=sch_namespace):
@@ -235,13 +237,35 @@ class ElementRule(Element):
         self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
 
     def run(self, xml: _Element, variables_dict: Optional[dict] = None):
-        # OVERRIDES Element (ElementRule is at the bottom of the Element tree)
+        """
+        This method overrides Element.run function because ElementRule is at the bottom of the Element tree,
+        and it does not have any children.
+
+        Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
+        strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
+        """
         evaluated_variables = variables_dict and variables_dict.copy() or {}
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
 
-        if self._variables:
-            # To save performance, only copy the XML if we need to
+        if self.root_name == "CEN":
+            # CEN schematron doesn't have any variable, and evaluate all needed element directly in the selector path.
+            # This forces us to evaluate the assertion with the whole XML because it can ask for any element anywhere
+            # in the XML at any time, even if that XML not related parent-child wise.
+            # Fortunately, most of CEN assertion does not depend on every InvoiceLine elements (except some).
+            # Hence, the strategy is to create a shallow XML containing all original XML elements EXCEPT the invoice lines.
+            # By this approach, the shallow XML to be evaluated will have the size of around 100~200 lines at most.
+            # (which is still slow, but much better than the unlimited lines from XML with huge number of invoice lines).
+            shallow_xml = deepcopy(xml)
+            invoice_line_elements = shallow_xml.xpath(
+                _path="//cac:InvoiceLine",
+                namespaces={"cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"},
+            )
+            for invoice_line_element in invoice_line_elements:
+                shallow_xml.remove(invoice_line_element)
+        elif self._variables:
+            # For all other schematron, we create a new "shallow" element containing just the root and the context node.
+            # And do the expensive select query on this new small XML element instead.
             shallow_xml = deepcopy(xml)
             shallow_xml.clear()
         else:
@@ -249,8 +273,6 @@ class ElementRule(Element):
 
         for context_node in context_nodes:
             # If the rule has additional variable, we evaluate them here.
-            # To save performance, we create a new "shallow" element containing just the root and the context node,
-            # And do the expensive select query on this new small XML element instead.
             if self._variables:
                 evaluated_variables = variables_dict and variables_dict.copy() or {}
                 shallow_context = deepcopy(context_node)
@@ -260,14 +282,32 @@ class ElementRule(Element):
                     evaluated_variables.update({name: selected_value})
                 shallow_xml.clear()
 
+            # Append copy of InvoiceLine element on the shallow XML
+            if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
+                shallow_line = deepcopy(context_node)
+                shallow_xml.append(shallow_line)
+
             # Run every assertion to the context node
             for assert_id, flag, selector, message in self._assertions:
-                res = selector.select(context_node, variables=evaluated_variables)
+                if self.root_name == "CEN":
+                    if assert_id in ("BR-CO-10", "BR-S-01", "BR-S-08", "BR-S-09"):
+                        # These assertions (unfortunately) require us to evaluate the whole XML
+                        # because they asks for some value(s) from each InvoiceLine elements.
+                        res = selector.select(xml, item=context_node, variables=evaluated_variables)
+                    else:
+                        res = selector.select(shallow_xml, item=context_node, variables=evaluated_variables)
+                else:
+                    res = selector.select(context_node, variables=evaluated_variables)
+
                 if not res:
                     if flag == "warning":
                         warning.append(f"[{assert_id}] {message}")
                     elif flag == "fatal":
                         fatal.append(f"[{assert_id}] {message}")
+
+            # Remove the appended InvoiceLine copy from earlier
+            if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
+                shallow_xml.remove(shallow_xml.getchildren()[-1])
 
         return warning, fatal
 
@@ -304,8 +344,9 @@ def run_schematron(name: str):
     test_file_path = TEST_MAP[name]["test_file_path"]
 
     for schematron_path in schematron_paths:
-        print(f"Running {schematron_path}")
-        schematron = ElementSchematron.from_sch(etree.parse(schematron_path).getroot())
+        root_name = PATH_ROOT_MAP[schematron_path]
+        print(f"Running {root_name} schematron")
+        schematron = ElementSchematron.from_sch(etree.parse(schematron_path).getroot(), root_name)
         doc = etree.parse(test_file_path).getroot()
         warning, fatal = schematron.run(doc)
         if warning:

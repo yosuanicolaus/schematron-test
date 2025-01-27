@@ -1,6 +1,5 @@
 from typing import TypedDict
 
-
 SCHEMATRON_CEN_PATH = "validation/schematron/CEN-EN16931-UBL.sch"
 SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
 SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
@@ -41,3 +40,13 @@ TEST_MAP: dict[str, TestMapValue] = {
     },
 }
 
+
+PATH_ROOT_MAP = {
+    SCHEMATRON_CEN_PATH: "CEN",
+    SCHEMATRON_PEPPOL_PATH: "PEPPOL",
+    SCHEMATRON_NLCIUS_PATH: "NLCIUS",
+    SCHEMATRON_EUSR_PATH: "EUSR",
+    SCHEMATRON_TSR_PATH: "TSR",
+}
+
+INVOICE_LINE_TAG = "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}InvoiceLine"
