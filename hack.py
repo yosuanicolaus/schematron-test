@@ -2,7 +2,7 @@ import re
 import sys
 from copy import deepcopy
 from time import time
-from typing import List, Optional, Tuple, Union
+from typing import Generic, List, Optional, Tuple, TypeVar
 
 import elementpath
 from lxml import etree
@@ -15,6 +15,7 @@ parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
 rcr = 0
 rce = 0
+T = TypeVar("T", bound="Element")
 
 
 ################################################################################
@@ -125,12 +126,12 @@ def evaluate_TinVerification_function(self, context=None):
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
-class Element:
+class Element(Generic[T]):
     def __init__(self, namespaces: dict[str, str], parent: Optional["Element"] = None):
         self.namespaces = namespaces
-        self._children: List[Union[Element, ElementPattern, ElementRule]] = []
+        self.children: List[T] = []
         self._variables: List[Tuple[str, elementpath.Selector]] = []
-        self._parent: Optional[Element] = parent
+        self.parent: Optional[Element] = parent
         self.root_name: Optional[str] = parent and parent.root_name
 
     def add_variable(self, name, path):
@@ -138,8 +139,8 @@ class Element:
 
     @property
     def variables(self):
-        if self._parent:
-            return self._parent.variables + self._variables
+        if self.parent:
+            return self.parent.variables + self._variables
         else:
             return self._variables
 
@@ -150,7 +151,7 @@ class Element:
             evaluated_variables.update({name: selector.select(xml, variables=evaluated_variables)})
 
         warning, fatal = [], []
-        for child in self._children:
+        for child in self.children:
             res_warning, res_fatal = child.run(xml, variables_dict=evaluated_variables)
             warning += res_warning
             fatal += res_fatal
@@ -159,10 +160,14 @@ class Element:
 
 
 class ElementSchematron(Element):
+    def __init__(self, namespaces: dict[str, str], parent: Optional["Element"] = None):
+        super().__init__(namespaces, parent)
+        self.children: List[ElementPattern] = []
+
     @classmethod
     def from_sch(cls, sch: _Element, root_name: str):
         """
-        Construct the Element tree by traversing the schematron and appending all necessary child elements to their own `_children`.
+        Construct the Element tree by traversing the schematron and appending all necessary child elements to their own `children`.
         The Element tree will then look like this:
 
         ElementSchematron
@@ -208,23 +213,25 @@ class ElementSchematron(Element):
         return schematron
 
     def add_element_pattern(self, pattern_id="") -> "ElementPattern":
-        self._children.append(ElementPattern(pattern_id, self.namespaces, self))
-        return self._children[-1]
+        self.children.append(ElementPattern(pattern_id, self.namespaces, self))
+        return self.children[-1]
 
 
 class ElementPattern(Element):
     def __init__(self, pattern_id: str, namespaces: dict[str, str], parent: ElementSchematron):
         super().__init__(namespaces=namespaces, parent=parent)
+        self.children: List[ElementRule] = []
         self.pattern_id = pattern_id
 
     def add_element_rule(self, context: str) -> "ElementRule":
-        self._children.append(ElementRule(context, namespaces=self.namespaces, parent=self))
-        return self._children[-1]
+        self.children.append(ElementRule(context, namespaces=self.namespaces, parent=self))
+        return self.children[-1]
 
 
 class ElementRule(Element):
     def __init__(self, context: str, namespaces: dict, parent: ElementPattern):
         super().__init__(namespaces=namespaces, parent=parent)
+        self.children = []
 
         # The received `context` string here is in the format of a " | "-separated context items, and
         # each context item will be in the format of "OrphanedNode/AdditionalPathToNode" or "/RootNode/PathToNode".
