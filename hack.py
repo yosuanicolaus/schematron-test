@@ -173,8 +173,8 @@ class ElementSchematron(Element):
         """
 
         def add_all_variable(element: Element, node: _Element):
-            """Updates the given element object with the variables local
-            to the particular node it corresponds to.
+            """
+            Updates the given element object with the variables local to the particular node it corresponds to.
             """
             for var in node.findall("./let", namespaces=sch_namespace):
                 element.add_variable(var.get("name"), var.get("value"))
@@ -225,6 +225,11 @@ class ElementPattern(Element):
 class ElementRule(Element):
     def __init__(self, context: str, namespaces: dict, parent: ElementPattern):
         super().__init__(namespaces=namespaces, parent=parent)
+
+        # The received `context` string here is in the format of a " | "-separated context items, and
+        # each context item will be in the format of "OrphanedNode/AdditionalPathToNode" or "/RootNode/PathToNode".
+        # In the first case, we want to prepend them with "//" to explicitly indicate to the Selector
+        # that we need to do a find query to that node, because it doesn't start from the root.
         split_context = context.split("|")
         for i, or_context in enumerate(split_context):
             or_context = or_context.strip()
@@ -251,7 +256,7 @@ class ElementRule(Element):
         if self.root_name == "CEN":
             # CEN schematron doesn't have any variable, and evaluate all needed element directly in the selector path.
             # This forces us to evaluate the assertion with the whole XML because it can ask for any element anywhere
-            # in the XML at any time, even if that XML not related parent-child wise.
+            # in the XML at any time, even if they are not related parent-child wise.
             # Fortunately, most of CEN assertion does not depend on every InvoiceLine elements (except some).
             # Hence, the strategy is to create a shallow XML containing all original XML elements EXCEPT the invoice lines.
             # By this approach, the shallow XML to be evaluated will have the size of around 100~200 lines at most.
@@ -300,10 +305,12 @@ class ElementRule(Element):
                     res = selector.select(context_node, variables=evaluated_variables)
 
                 if not res:
+                    # Assert message from CEN schematron already includes the assert code
+                    assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
                     if flag == "warning":
-                        warning.append(f"[{assert_id}] {message}")
+                        warning.append(assert_message)
                     elif flag == "fatal":
-                        fatal.append(f"[{assert_id}] {message}")
+                        fatal.append(assert_message)
 
             # Remove the appended InvoiceLine copy from earlier
             if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
