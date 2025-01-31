@@ -5,20 +5,122 @@ from time import time
 from typing import Generic, List, Optional, Tuple, TypeVar
 
 import elementpath
+import ipdb
 from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
 
-from myconst import PATH_ROOT_MAP, SUCCESFUL_IDS, TEST_MAP
+from myconst import PATH_ROOT_MAP, TEST_MAP
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
+method = parser.method
+function = parser.function
 T = TypeVar("T", bound="Element")
 
-tmeta = 0
-thack = 0
+tvmeta = 0.0
+tvhack = 0.0
+tameta = 0.0
+tahack = 0.0
 told = 0
-successful_ids = []
+to_save_ids = []
+
+
+def xpath_u_gln(_, val):
+    weighted_sum = sum(num * (1 + (((index + 1) % 2) * 2)) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
+    return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
+
+
+def xpath_u_slack(_, exp, val, slack):
+    return (exp + slack) >= val and (exp - slack) <= val
+
+
+def xpath_u_mod11(_, val):
+    weighted_sum = sum(num * ((index % 6) + 2) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
+    return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
+
+
+def xpath_u_mod97_0208(_, val):
+    val = val[2:]
+    return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
+
+
+def xpath_u_checkCodiceIPA(_, val):
+    return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
+
+
+def xpath_u_checkCF16(_, val):
+    return bool(re.fullmatch(r"[a-zA-Z]{6}\d{2}[a-zA-Z]\d{2}[a-zA-Z\d]{3}\d[a-zA-Z]", val))
+
+
+def xpath_u_checkCF(_, val):
+    if len(val) == 16:
+        return xpath_u_checkCF16(_, val)
+    elif len(val) == 11:
+        return val.isnumeric()
+    return False
+
+
+def _xpath_u_addPIVA(arg, pari):
+    # Because of the way the xpath substr function works, the base case is arg as an empty string
+    # pari is used to alterate, such that the CHECK_NO ("0246813579") is indexed every other character
+    if not arg.isnumeric():
+        return 0
+    else:
+        if pari:
+            return int("0246813579"[int(arg[0])]) + _xpath_u_addPIVA(arg[1:], not pari)
+        else:
+            return int(arg[0]) + _xpath_u_addPIVA(arg[1:], not pari)
+
+
+def xpath_u_checkPIVA(_, val):
+    if not val.isnumeric:
+        return 1
+    return _xpath_u_addPIVA(val, False) % 10
+
+
+def xpath_u_addPIVA(_, arg, pari):
+    return _xpath_u_addPIVA(arg, pari)
+
+
+def xpath_u_checkPIVAseIT(_, val):
+    if val[:2].upper() != "IT" or len(val) != 13:
+        return False
+    else:
+        return bool(_xpath_u_addPIVA(val[2:], False) % 10 == 0)
+
+
+def xpath_u_abn(_, val: str):
+    subtractors = [49] + [48] * 10
+    multipliers = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+    return bool(sum((ord(character) - subtractors[index]) * multipliers[index] for index, character in enumerate(val)) % 89 == 0)
+
+
+def xpath_u_TinVerification(_, val: str):
+    return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
+
+
+utils_ns = etree.FunctionNamespace("utils")
+utils_ns.prefix = "u"
+utils_ns["gln"] = xpath_u_gln
+utils_ns["slack"] = xpath_u_slack
+utils_ns["mod11"] = xpath_u_mod11
+utils_ns["mod97-0208"] = xpath_u_mod97_0208
+utils_ns["checkCodiceIPA"] = xpath_u_checkCodiceIPA
+utils_ns["checkCF"] = xpath_u_checkCF
+utils_ns["checkCF16"] = xpath_u_checkCF16
+utils_ns["checkPIVA"] = xpath_u_checkPIVA
+utils_ns["addPIVA"] = xpath_u_addPIVA
+utils_ns["checkPIVAseIT"] = xpath_u_checkPIVAseIT
+utils_ns["abn"] = xpath_u_abn
+utils_ns["TinVerification"] = xpath_u_TinVerification
+
+
+def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
+    return f"""if ({condition}):
+    {true_statement}
+else:
+    {false_statement}"""
 
 
 ################################################################################
@@ -26,14 +128,14 @@ successful_ids = []
 ################################################################################
 
 
-@parser.method(parser.function("gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_gln_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     weighted_sum = sum(num * (1 + (((index + 1) % 2) * 2)) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
 
 
-@parser.method(parser.function("slack", prefix="u", nargs=3, sequence_types=("xs:decimal", "xs:decimal", "xs:decimal", "xs:boolean")))
+@method(function("slack", prefix="u", nargs=3, sequence_types=("xs:decimal", "xs:decimal", "xs:decimal", "xs:boolean")))
 def evaluate_slack_function(self, context=None):
     exp = self.get_argument(context, default="", cls=elementpath.datatypes.Decimal)
     val = self.get_argument(context, index=1, default="", cls=elementpath.datatypes.Decimal)
@@ -41,27 +143,27 @@ def evaluate_slack_function(self, context=None):
     return (exp + slack) >= val and (exp - slack) <= val
 
 
-@parser.method(parser.function("mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_mod11_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     weighted_sum = sum(num * ((index % 6) + 2) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
 
 
-@parser.method(parser.function("mod97-0208", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("mod97-0208", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_mod97_0208_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)[2:]
     return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
 
 
-@parser.method(parser.function("checkCodiceIPA", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("checkCodiceIPA", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_checkCodiceIPA_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
 
 
-@parser.method(parser.function("checkCF", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-@parser.method(parser.function("checkCF16", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("checkCF", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("checkCF16", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_checkCF_function(self, context=None):
     """Check the characters of the codice fiscale to ensure it conforms to either the 16 or 11 character standards"""
     val = self.get_argument(context, default="", cls=str)
@@ -73,9 +175,9 @@ def evaluate_checkCF_function(self, context=None):
     return False
 
 
-@parser.method(parser.function("checkPIVA", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
-@parser.method(parser.function("addPIVA", prefix="u", nargs=2, sequence_types=("xs:string", "xs:integer", "xs:integer")))
-@parser.method(parser.function("checkPIVAseIT", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
+@method(function("checkPIVA", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
+@method(function("addPIVA", prefix="u", nargs=2, sequence_types=("xs:string", "xs:integer", "xs:integer")))
+@method(function("checkPIVAseIT", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
 def evaluate_checkPIVA_function(self, context=None):
     """Recursive implementation of a version of the luhn 10 algorithm used for checking partita IVA
 
@@ -115,7 +217,7 @@ def evaluate_checkPIVA_function(self, context=None):
     return False
 
 
-@parser.method(parser.function("abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
+@method(function("abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
 def evaluate_abn_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     subtractors = [49] + [48] * 10
@@ -123,7 +225,7 @@ def evaluate_abn_function(self, context=None):
     return bool(sum((ord(character) - subtractors[index]) * multipliers[index] for index, character in enumerate(val)) % 89 == 0)
 
 
-@parser.method(parser.function("TinVerification", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
+@method(function("TinVerification", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
 def evaluate_TinVerification_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
@@ -251,6 +353,23 @@ class ElementRule(Element):
         # List of 4 element tuples, consisting of assert_id, flag, test (selector), message
         self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
 
+    def add_assert(self, assert_id: str, flag: str, test: str, message: str):
+        # Before appending, "clean" the test first
+        if "satisfies" in test:
+            pass
+            # print(test)
+            # ipdb.set_trace()
+
+        clean_test = []
+        for i in range(len(test)):
+            if i + 1 < len(test) and test[i] == test[i + 1] == " ":
+                continue
+            clean_test.append(test[i])
+
+        test = "".join(clean_test).strip()
+        test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
+        self._assertions.append((assert_id, flag, test_selector, message))
+
     def run(self, xml: _Element, variables_dict: Optional[dict] = None):
         """
         This method overrides Element.run function because ElementRule is at the bottom of the Element tree,
@@ -259,6 +378,7 @@ class ElementRule(Element):
         Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
         strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
         """
+        global tameta, tahack, tvmeta, tvhack
         evars = variables_dict and variables_dict.copy() or {}
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
@@ -303,35 +423,47 @@ class ElementRule(Element):
             #     shallow_xml.append(shallow_line)
 
             for k, v in evars.items():
-                if isinstance(v, list) and len(v) == 1:
-                    evars[k] = v[0]
+                if isinstance(v, list) and not isinstance(v[0], _Element):
+                    # xpath variables only accepts strings. For list variables, use space-separated values
+                    evars[k] = " ".join(v)
 
             for assert_id, flag, selector, message in self._assertions:
-                # expected = selector.select(xml, item=context_node, variables=evars)
-                # success = True
-                if assert_id not in SUCCESFUL_IDS:
-                    continue
+                expected = selector.select(xml, item=context_node, variables=evars)
+                success = True
+                # if assert_id not in SUCCESFUL_IDS:
+                #     continue
 
-                context_node.xpath(selector.path, namespaces=self.namespaces, **evars)
-                # print(assert_id)
-                # print(selector.path)
-
-                # try:
-                #     res = xml.xpath(selector.path, namespaces=self.namespaces, **evars)
-                #     cres = context_node.xpath(selector.path, namespaces=self.namespaces, **evars)
-                #     if cres == expected:
-                #         print("xpath succeeded!", res)
-                #     elif res == expected:
-                #         print("xpath succeeded only by using root node")
-                #     else:
-                #         raise Exception("xpath succeeded but wrong result!")
-                # except Exception as e:
-                #     print("xpath failed!", e)
-                #     # ipdb.set_trace()
-                #     success = False
+                # th = time()
+                # selector.select(context_node, variables=evars)
+                # tahack += time() - th
                 #
-                # if success:
-                #     successful_ids.append(assert_id)
+                # tm = time()
+                # context_node.xpath(selector.path, namespaces=self.namespaces, **evars)
+                # tameta += time() - tm
+
+                try:
+                    res = xml.xpath(selector.path, namespaces=self.namespaces, **evars)
+                    cres = context_node.xpath(selector.path, namespaces=self.namespaces, **evars)
+                    if cres == expected:
+                        print("xpath succeeded!", res)
+                    elif res == expected:
+                        print("\n!!!")
+                        print("xpath succeeded only by using root node")
+                        print(assert_id)
+                        print("!!!\n")
+                    else:
+                        raise Exception("xpath succeeded but wrong result!")
+                except Exception as e:
+                    print(assert_id)
+                    print(selector.path)
+                    print("xpath failed!", e)
+                    if "satisfies" in selector.path:
+                        pass
+                        ipdb.set_trace()
+                    success = False
+
+                if not success:
+                    to_save_ids.append(assert_id)
 
             # # Append copy of InvoiceLine element on the shallow XML
             # if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
@@ -363,10 +495,6 @@ class ElementRule(Element):
             #     shallow_xml.remove(shallow_xml.getchildren()[-1])
 
         return warning, fatal
-
-    def add_assert(self, assert_id: str, flag: str, test: str, message: str):
-        test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
-        self._assertions.append((assert_id, flag, test_selector, message))
 
 
 def print_time(name: str, start_time: float, force=False):
@@ -416,10 +544,15 @@ def main():
     tta = time()
     run_schematron(to_run)
     pprint(time() - tta)
-    # print(f"total rcr: {rcr}")
-    # print(f"total rce: {rce}")
-    # print(successful_ids)
+    print(f"total tmeta: {tameta}")
+    print(f"total thack: {tahack}")
+    print(to_save_ids)
+    print(len(to_save_ids))
 
 
 if __name__ == "__main__":
     main()
+
+if 2 == 1:
+    # To keep the import from deleted by autocomplete
+    ipdb.set_trace()
