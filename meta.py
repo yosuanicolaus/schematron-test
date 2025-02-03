@@ -1,6 +1,5 @@
 import re
 import sys
-from copy import deepcopy
 from time import time
 from typing import Generic, List, Optional, Tuple, TypeVar
 
@@ -9,8 +8,9 @@ import ipdb
 from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
+from saxonche import PySaxonProcessor
 
-from myconst import PATH_ROOT_MAP, TEST_MAP
+from myconst import PATH_ROOT_MAP, TEST_MAP, TEST_REPLACE_MAP
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
@@ -24,6 +24,9 @@ tameta = 0.0
 tahack = 0.0
 told = 0
 to_save_ids = []
+
+satisfies_ids: dict[str, str] = {}
+dummy_xml = etree.Element("unused")
 
 
 def xpath_u_gln(_, val):
@@ -100,6 +103,44 @@ def xpath_u_TinVerification(_, val: str):
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
+def xpath_u_custom_for_some(ctx, item_list_str: str, condition_var: str):
+    item_list = item_list_str.split(" ")
+
+    for item in item_list:
+        test = re.sub(r"\$VAR", item, condition_var)
+        if ctx.context_node.xpath(test):
+            ipdb.set_trace()
+            return True
+
+    return False
+
+
+def xpath_u_custom_for_every(ctx, item_list_str: str, condition_var: str):
+    item_list = item_list_str.split(" ")
+
+    for item in item_list:
+        test = re.sub(r"\$VAR", item, condition_var)
+        if ctx.context_node.xpath(test):
+            ipdb.set_trace()
+            return True
+    return True
+
+
+def xpath_u_custom_if_else(_, condition, then_clause, else_clause):
+    if condition:
+        return then_clause
+    else:
+        return else_clause
+
+
+def xpath_u_custom_call_elementpath(_, template: str, value: str):
+    return elementpath.select(dummy_xml, template % value)
+
+
+def xpath_u_exists(_, value):
+    return bool(value)
+
+
 utils_ns = etree.FunctionNamespace("utils")
 utils_ns.prefix = "u"
 utils_ns["gln"] = xpath_u_gln
@@ -114,6 +155,13 @@ utils_ns["addPIVA"] = xpath_u_addPIVA
 utils_ns["checkPIVAseIT"] = xpath_u_checkPIVAseIT
 utils_ns["abn"] = xpath_u_abn
 utils_ns["TinVerification"] = xpath_u_TinVerification
+
+# custom utils
+utils_ns["for_some"] = xpath_u_custom_for_some
+utils_ns["for_every"] = xpath_u_custom_for_every
+utils_ns["if_else"] = xpath_u_custom_if_else
+utils_ns["call_elementpath"] = xpath_u_custom_call_elementpath
+utils_ns["exists"] = xpath_u_exists
 
 
 def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
@@ -352,6 +400,7 @@ class ElementRule(Element):
 
         # List of 4 element tuples, consisting of assert_id, flag, test (selector), message
         self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
+        self.namespaces.update({"re": "http://exslt.org/regular-expressions"})
 
     def add_assert(self, assert_id: str, flag: str, test: str, message: str):
         # Before appending, "clean" the test first
@@ -383,116 +432,66 @@ class ElementRule(Element):
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
 
-        if self.root_name == "CEN":
-            # CEN schematron doesn't have any variable, and evaluate all needed element directly in the selector path.
-            # This forces us to evaluate the assertion with the whole XML because it can ask for any element anywhere
-            # in the XML at any time, even if they are not related parent-child wise.
-            # Fortunately, most of CEN assertion does not depend on every InvoiceLine elements (except some).
-            # Hence, the strategy is to create a shallow XML containing all original XML elements EXCEPT the invoice lines.
-            # By this approach, the shallow XML to be evaluated will have the size of around 100~200 lines at most.
-            # (which is still slow, but much better than the unlimited lines from XML with huge number of invoice lines).
-            shallow_xml = deepcopy(xml)
-            invoice_line_elements = shallow_xml.xpath(
-                _path="//cac:InvoiceLine",
-                namespaces={"cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"},
-            )
-            for invoice_line_element in invoice_line_elements:
-                shallow_xml.remove(invoice_line_element)
-        elif self._variables:
-            # For all other schematron, we create a new "shallow" element containing just the root and the context node.
-            # And do the expensive select query on this new small XML element instead.
-            shallow_xml = deepcopy(xml)
-            shallow_xml.clear()
-        else:
-            shallow_xml = etree.Element("unused")
-
         for context_node in context_nodes:
             # If the rule has additional variable, we evaluate them here.
+            ovars = variables_dict and variables_dict.copy() or {}
             if self._variables:
-                evars = variables_dict and variables_dict.copy() or {}
-                shallow_context = deepcopy(context_node)
-                shallow_xml.append(shallow_context)
                 for name, selector in self._variables:
-                    selected_value = selector.select(root=shallow_xml, item=shallow_context, variables=evars)
-                    evars.update({name: selected_value})
-                shallow_xml.clear()
+                    oselect = selector.select(xml, item=context_node, variables=ovars)
+                    ovars.update({name: oselect})
 
-            # Append copy of InvoiceLine element on the shallow XML
-            # if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
-            #     shallow_line = deepcopy(context_node)
-            #     shallow_xml.append(shallow_line)
-
+            evars = ovars.copy()
             for k, v in evars.items():
                 if isinstance(v, list) and not isinstance(v[0], _Element):
                     # xpath variables only accepts strings. For list variables, use space-separated values
                     evars[k] = " ".join(v)
 
             for assert_id, flag, selector, message in self._assertions:
-                expected = selector.select(xml, item=context_node, variables=evars)
-                success = True
-                # if assert_id not in SUCCESFUL_IDS:
-                #     continue
+                th = time()
+                expected = selector.select(xml, item=context_node, variables=ovars)
+                tahack += time() - th
 
-                # th = time()
-                # selector.select(context_node, variables=evars)
-                # tahack += time() - th
-                #
-                # tm = time()
-                # context_node.xpath(selector.path, namespaces=self.namespaces, **evars)
-                # tameta += time() - tm
+                test_str = selector.path
+                if "matches" in test_str:
+                    test_str = re.sub(r"matches", "re:match", test_str)
+
+                if "exists" in test_str:
+                    test_str = re.sub(r"exists", "u:exists", test_str)
+
+                # if "satisfies" in test_str:
+                #     if "some" in test_str:
+                #         satisfies_ids[test_str] = "contains('{FULL_LIST_CONST}', concat(' ', @varHere, ' '))"
+
+                if test_str in TEST_REPLACE_MAP:
+                    test_str = TEST_REPLACE_MAP[test_str]
 
                 try:
-                    res = xml.xpath(selector.path, namespaces=self.namespaces, **evars)
-                    cres = context_node.xpath(selector.path, namespaces=self.namespaces, **evars)
+                    tm = time()
+                    cres = context_node.xpath(test_str, namespaces=self.namespaces, **evars)
+                    tameta += time() - tm
+                    res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
                     if cres == expected:
-                        print("xpath succeeded!", res)
+                        print("xpath succeeded!", cres)
                     elif res == expected:
-                        print("\n!!!")
-                        print("xpath succeeded only by using root node")
-                        print(assert_id)
-                        print("!!!\n")
+                        print("!!!")
+                        print("!!! xpath succeeded only by using root node", assert_id)
+                        print("!!!")
                     else:
                         raise Exception("xpath succeeded but wrong result!")
+
+                    if not cres:
+                        assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
+                        if flag == "warning":
+                            warning.append(assert_message)
+                        elif flag == "fatal":
+                            fatal.append(assert_message)
+                            success = False
+
                 except Exception as e:
                     print(assert_id)
-                    print(selector.path)
+                    print(test_str)
                     print("xpath failed!", e)
-                    if "satisfies" in selector.path:
-                        pass
-                        ipdb.set_trace()
-                    success = False
-
-                if not success:
-                    to_save_ids.append(assert_id)
-
-            # # Append copy of InvoiceLine element on the shallow XML
-            # if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
-            #     shallow_line = deepcopy(context_node)
-            #     shallow_xml.append(shallow_line)
-            #
-            # # Run every assertion to the context node
-            # for assert_id, flag, selector, message in self._assertions:
-            #     if self.root_name == "CEN":
-            #         if assert_id in ("BR-CO-10", "BR-S-01", "BR-S-08", "BR-S-09"):
-            #             # These assertions (unfortunately) require us to evaluate the whole XML
-            #             # because they asks for some value(s) from each InvoiceLine elements.
-            #             res = selector.select(xml, item=context_node, variables=evars)
-            #         else:
-            #             res = selector.select(shallow_xml, item=context_node, variables=evars)
-            #     else:
-            #         res = selector.select(context_node, variables=evars)
-            #
-            #     if not res:
-            #         # Assert message from CEN schematron already includes the assert code
-            #         assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
-            #         if flag == "warning":
-            #             warning.append(assert_message)
-            #         elif flag == "fatal":
-            #             fatal.append(assert_message)
-            #
-            # # Remove the appended InvoiceLine copy from earlier
-            # if self.root_name == "CEN" and context_node.tag == INVOICE_LINE_TAG:
-            #     shallow_xml.remove(shallow_xml.getchildren()[-1])
+                    ipdb.set_trace()
 
         return warning, fatal
 
@@ -540,14 +539,49 @@ def run_schematron(name: str):
 
 def main():
     to_run = sys.argv[1]
+    if to_run == "saxonche":
+        saxonche()
+        return
+
     print("Running", to_run.upper())
     tta = time()
     run_schematron(to_run)
     pprint(time() - tta)
     print(f"total tmeta: {tameta}")
     print(f"total thack: {tahack}")
-    print(to_save_ids)
+    # print(to_save_ids)
     print(len(to_save_ids))
+
+
+def saxonche():
+    tt = time()
+    with PySaxonProcessor(license=False) as proc:
+        xsltproc = proc.new_xslt30_processor()
+        peppol_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/peppol.xsl")
+
+    with PySaxonProcessor(license=False):
+        output = peppol_sch.transform_to_string(source_file=TEST_MAP["peppol100"]["test_file_path"])
+        svrl = etree.fromstring(output.encode()).getroottree()
+        warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
+        fatal = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="fatal"]')]
+
+        print("Warning:")
+        pprint(warning)
+        print("Fatal:")
+        pprint(fatal)
+
+    print(time() - tt)
+
+    # CEN_EN16931_UBL, PEPPOL_EN16931_UBL, EUSR, TSR, NLCIUS = (
+    #     xsltproc.compile_stylesheet(stylesheet_file=get_module_resource(*SCHEMATRON_PATH, fname))
+    #     for fname in (
+    #         "CEN-EN16931-UBL.xsl",
+    #         "PEPPOL-EN16931-UBL.xsl",
+    #         "peppol-end-user-statistics-reporting-1.1.5.xsl",
+    #         "peppol-transaction-statistics-reporting-1.0.5.xsl",
+    #         "si-ubl-2.0.xsl",
+    #     )
+    # )
 
 
 if __name__ == "__main__":
@@ -556,3 +590,5 @@ if __name__ == "__main__":
 if 2 == 1:
     # To keep the import from deleted by autocomplete
     ipdb.set_trace()
+
+print(satisfies_ids)

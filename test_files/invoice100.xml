@@ -13,7 +13,7 @@
   <cac:AdditionalDocumentReference>
     <cbc:ID>INV_2025_00007.pdf</cbc:ID>
     <cac:Attachment>
-      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2025_00007.pdf">100 lines here</cbc:EmbeddedDocumentBinaryObject>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2025_00007.pdf"></cbc:EmbeddedDocumentBinaryObject>
     </cac:Attachment>
   </cac:AdditionalDocumentReference>
   <cac:AccountingSupplierParty>
