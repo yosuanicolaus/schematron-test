@@ -76,7 +76,7 @@ PEPPOL_CONST_UNCL2005 = " 3 35 432 "
 PEPPOL_CONST_UNCL5189 = " 41 42 60 62 63 64 65 66 67 68 70 71 88 95 100 102 103 104 105 "
 PEPPOL_CONST_UNCL7161 = " AA AAA AAC AAD AAE AAF AAH AAI AAS AAT AAV AAY AAZ ABA ABB ABC ABD ABF ABK ABL ABN ABR ABS ABT ABU ACF ACG ACH ACI ACJ ACK ACL ACM ACS ADC ADE ADJ ADK ADL ADM ADN ADO ADP ADQ ADR ADT ADW ADY ADZ AEA AEB AEC AED AEF AEH AEI AEJ AEK AEL AEM AEN AEO AEP AES AET AEU AEV AEW AEX AEY AEZ AJ AU CA CAB CAD CAE CAF CAI CAJ CAK CAL CAM CAN CAO CAP CAQ CAR CAS CAT CAU CAV CAW CAX CAY CAZ CD CG CS CT DAB DAC DAD DAF DAG DAH DAI DAJ DAK DAL DAM DAN DAO DAP DAQ DL EG EP ER FAA FAB FAC FC FH FI GAA HAA HD HH IAA IAB ID IF IR IS KO L1 LA LAA LAB LF MAE MI ML NAA OA PA PAA PC PL RAB RAC RAD RAF RE RF RH RV SA SAA SAD SAE SAI SG SH SM SU TAB TAC TT TV V1 V2 WH XAA YY ZZZ "
 PEPPOL_CONST_UNCL5305 = " AE E S Z G O K L M "
-PEPPOL_CONST_EAID = " 0002 0007 0009 0037 0060 0088 0096 0097 0106 0130 0135 0142 0151 0183 0184 0188 0190 0191 0192 0193 0195 0196 0198 0199 0200 0201 0202 0204 0208 0209 0210 0211 0212 0213 0215 0216 9901 9910 9913 9914 9915 9918 9919 9920 9922 9923 9924 9925 9926 9927 9928 9929 9930 9931 9932 9933 9934 9935 9936 9937 9938 9939 9940 9941 9942 9943 9944 9945 9946 9947 9948 9949 9950 9951 9952 9953 9955 9957 9959 "
+PEPPOL_CONST_EAID = " 0002 0007 0009 0037 0060 0088 0096 0097 0106 0130 0135 0142 0151 0183 0184 0188 0190 0191 0192 0193 0195 0196 0198 0199 0200 0201 0202 0204 0208 0209 0210 0211 0212 0213 0215 0216 0218 0221 0230 9901 9910 9913 9914 9915 9918 9919 9920 9922 9923 9924 9925 9926 9927 9928 9929 9930 9931 9932 9933 9934 9935 9936 9937 9938 9939 9940 9941 9942 9943 9944 9945 9946 9947 9948 9949 9950 9951 9952 9953 9957 9959 "
 
 
 class ForReplaceMapItemValue(TypedDict):
@@ -136,31 +136,874 @@ FOR_REPLACE_MAP: dict[str, ForReplaceMapItemValue] = {
 
 TEST_REPLACE_MAP = {
     # CEN
-    "(number(cbc:LineExtensionAmount) = number(round(sum(//(cac:InvoiceLine|cac:CreditNoteLine)/number(cbc:LineExtensionAmount)) * 10 * 10) div 100))": "number(cbc:LineExtensionAmount) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
-    "number(cbc:ChargeTotalAmount) = (round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=true()]/number(cbc:Amount)) * 10 * 10) div 100) or (not(cbc:ChargeTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=true()]))": "number(cbc:AllowanceTotalAmount) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
-    ###
-    "number(cbc:AllowanceTotalAmount) = (round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/number(cbc:Amount)) * 10 * 10) div 100) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))": "number(cbc:AllowanceTotalAmount) = (u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2)) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
-    "every $taxcurrency in cbc:TaxCurrencyCode satisfies u:exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$taxcurrency])": "u:for_every('cbc:TaxCurrencyCode', 'u:exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR])')",
-    "((u:exists(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) or u:exists(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE'])) and (count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) = 1)) or (not(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) and not(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']))": """((u:exists(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) or u:exists(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE'])) and (count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) = 1)) or (not(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) and not(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']))""",
-    "(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))",
-    "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))",
-    "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))",
-    "every $Currency in cbc:DocumentCurrencyCode satisfies (count(cac:TaxTotal/number(cbc:TaxAmount[@currencyID=$Currency])) eq 1) and (cac:LegalMonetaryTotal/number(cbc:TaxInclusiveAmount) = round( (cac:LegalMonetaryTotal/number(cbc:TaxExclusiveAmount) + cac:TaxTotal/number(cbc:TaxAmount[@currencyID=$Currency])) * 10 * 10) div 100)": "every $Currency in cbc:DocumentCurrencyCode satisfies (count(cac:TaxTotal/number(cbc:TaxAmount[@currencyID=$Currency])) eq 1) and (cac:LegalMonetaryTotal/number(cbc:TaxInclusiveAmount) = round( (cac:LegalMonetaryTotal/number(cbc:TaxExclusiveAmount) + cac:TaxTotal/number(cbc:TaxAmount[@currencyID=$Currency])) * 10 * 10) div 100)",
-    "((u:exists(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']) or u:exists(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E'])) and (count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']) = 1)) or (not(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']) and not(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']))": "((u:exists(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']) or u:exists(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E'])) and (count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']) = 1)) or (not(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']) and not(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'E']))",
-    "(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID))) or not(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID))) or not(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))",
-    "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='E'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))",
-    # "number(cbc:AllowanceTotalAmount) = (round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/number(cbc:Amount)) * 10 * 10) div 100) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))": "TODO",
-    # "every $taxcurrency in cbc:TaxCurrencyCode satisfies u:exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$taxcurrency])": "TODO",
-    # "((u:exists(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) or u:exists(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE'])) and (count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) = 1)) or (not(//cac:TaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']) and not(//cac:ClassifiedTaxCategory[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']/cbc:ID[normalize-space(.) = 'AE']))": "TODO",
-    # "(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "TODO",
-    # "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "TODO",
-    # "(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']) and (u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) or u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID)) and (u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/(normalize-space(upper-case(cbc:ID)) = 'VAT')]/cbc:CompanyID) or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID))) or not(u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']))": "TODO",
-    "wtf": "",
+    "BR-CO-10": "number(cbc:LineExtensionAmount) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
+    "BR-CO-12": "number(cbc:AllowanceTotalAmount) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
+    "BR-CO-11": "number(cbc:AllowanceTotalAmount) = (u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2)) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
+    "BR-53": "u:for_every('cbc:TaxCurrencyCode', 'u:exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR])')",
+    "BR-AE-01": """
+        (
+            (
+                u:exists(//cac:TaxCategory[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:ID[normalize-space() = 'AE']) 
+                or 
+                u:exists(//cac:ClassifiedTaxCategory[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:ID[normalize-space() = 'AE'])
+            )
+            and 
+            (
+                count(
+                cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:ID[normalize-space() = 'AE']
+                ) = 1
+            )
+        )
+        or 
+        (
+          not(//cac:TaxCategory[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:ID[normalize-space() = 'AE']) 
+          and 
+          not(//cac:ClassifiedTaxCategory[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:ID[normalize-space() = 'AE'])
+        )
+    """,
+    "BR-AE-02": """
+        (
+            u:exists(
+                //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            )
+            and (
+                u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+                or u:exists(
+                    //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+                )
+            )
+            and (
+                u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+                or u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
+            )
+        )
+        or not(
+            u:exists(
+                //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            )
+        )
+    """,
+    "BR-AE-03": """
+    (
+        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]) 
+        and 
+        (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) 
+            or 
+            u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:CompanyID)
+        ) 
+        and 
+        (
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]/cbc:CompanyID) 
+            or 
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
+        )
+    ) 
+    or not(
+        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']])
+    )
+    """,
+    "BR-AE-04": """
+    (
+        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']])
+        and
+        (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or
+            u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and
+        (
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-CO-15": "u:for_every('cbc:DocumentCurrencyCode', '(count(cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR]) = 1) and (number(cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount) = u:round(cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount + cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR], 2))')",
+    "BR-E-01": """
+    (
+        (
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'E']
+            )
+            or u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'E']
+            )
+        )
+        and count(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'E']
+        ) = 1
+    )
+    or (
+        not(
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'E']
+            )
+        )
+        and not(
+            u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'E']
+            )
+        )
+    )
+    """,
+    "BR-E-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-E-03": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-E-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-G-01": """
+    (
+        (
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'G']
+            )
+            or u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'G']
+            )
+        )
+        and count(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'G']
+        ) = 1
+    )
+    or (
+        not(
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'G']
+            )
+        )
+        and not(
+            u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'G']
+            )
+        )
+    )
+    """,
+    "BR-G-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-G-03": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-G-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-IC-01": """
+    (
+        (
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+            )
+            or u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+            )
+        )
+        and count(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+        ) = 1
+    )
+    or (
+        not(
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+            )
+        )
+        and not(
+            u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+            )
+        )
+    )
+    """,
+    "BR-IC-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+        and u:exists(
+            //cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-IC-03": """
+    (
+        u:exists(
+            //cac:allowancecharge[cbc:chargeindicator=false()]/cac:taxcategory[cbc:id[normalize-space(.) = 'k'] and cac:taxscheme/cbc:id[normalize-space(u:upper_case(.))='vat']]
+        )
+        and (
+            u:exists(//cac:accountingsupplierparty/cac:party/cac:partytaxscheme[cac:taxscheme/cbc:id[normalize-space(u:upper_case(.)) = 'vat']]/cbc:companyid)
+            or u:exists(
+                //cac:taxrepresentativeparty/cac:partytaxscheme[cac:taxscheme/cbc:id[normalize-space(u:upper_case(.)) = 'vat']]/cbc:companyid
+            )
+        )
+        and u:exists(
+            //cac:accountingcustomerparty/cac:party/cac:partytaxscheme[cac:taxscheme/cbc:id[normalize-space(u:upper_case(.)) = 'vat']]/cbc:companyid
+        )
+    )
+    or not(
+        u:exists(
+            //cac:allowancecharge[cbc:chargeindicator=false()]/cac:taxcategory[cbc:id[normalize-space(.) = 'k'] and cac:taxscheme/cbc:id[normalize-space(u:upper_case(.))='vat']]
+        )
+    )
+    """,
+    "BR-IC-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+        and u:exists(
+            //cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-IC-11": """
+    (
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+        )
+        and (string-length(cac:Delivery/cbc:ActualDeliveryDate) > 1 or boolean(cac:InvoicePeriod/*))
+    )
+    or not(
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+        )
+    )
+    """,
+    "BR-IC-12": """
+    (
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+        )
+        and string-length(cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode) > 1
+    )
+    or not(
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'K']
+        )
+    )
+    """,
+    "BR-IG-01": """
+    (
+        (
+            count(//cac:AllowanceCharge/cac:TaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']])
+            +
+            count(//cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']])
+        ) > 0
+        and
+        count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cbc:ID = 'L']) > 0
+    ) or (
+        (
+            count(//cac:AllowanceCharge/cac:TaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]) + count(//cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']])
+        ) = 0 and count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+    ) = 0
+    )
+    """,
+    "BR-IG-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-IG-03": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-IG-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-IP-01": """
+    (
+        (
+            count(//cac:AllowanceCharge/cac:TaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]) + count(//cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']])
+        ) > 0 and count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cbc:ID = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']) > 0
+    ) or (
+        (
+            count(//cac:AllowanceCharge/cac:TaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]) + count(//cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']])
+        ) = 0 and count(cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+    ) = 0
+    )
+    """,
+    "BR-IP-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-IP-03": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-IP-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-O-01": """
+    (
+        (
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+            )
+            or u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+            )
+        )
+        and count(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        ) = 1
+    )
+    or (
+        not(
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+            )
+        )
+        and not(
+            u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+            )
+        )
+    )
+    """,
+    "BR-O-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and not(
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and not(
+            u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and not(
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-O-03": """
+    (
+        u:exists(
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and not(
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and not(
+            u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and not(
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+    )
+    or not(
+        u:exists(
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-O-04": """
+    (
+        u:exists(
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and not(
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and not(
+            u:exists(//cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+        and not(
+            u:exists(//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
+        )
+    )
+    or not(
+        u:exists(
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-O-11": """
+    (
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+        and count(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        ) = 0
+    )
+    or not(
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+    )
+    """,
+    "BR-O-12": """
+    (
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+        and count(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        ) = 0
+    )
+    or not(
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+    )
+    """,
+    "BR-O-13": """
+    (
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+        and count(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        ) = 0
+    )
+    or not(
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+    )
+    """,
+    "BR-O-14": """
+    (
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+        and count(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        ) = 0
+    )
+    or not(
+        u:exists(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
+        )
+    )
+    """,
+    "BR-S-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-S-03": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-S-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-Z-01": """
+    (
+        (
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'Z']
+            )
+            or u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'Z']
+            )
+        )
+        and count(
+            cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'Z']
+        ) = 1
+    )
+    or (
+        not(
+            u:exists(
+                //cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'Z']
+            )
+        )
+        and not(
+            u:exists(
+                //cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'Z']
+            )
+        )
+    )
+    """,
+    "BR-Z-02": """
+    (
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:ClassifiedTaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+        )
+    )
+    """,
+    "BR-Z-03": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-Z-04": """
+    (
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+        and (
+            u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
+            or u:exists(
+                //cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID
+            )
+        )
+    )
+    or not(
+        u:exists(
+            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+        )
+    )
+    """,
+    "BR-CO-04": """
+    cac:Item/cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID
+    """,
+    "BR-CO-26": """
+    u:exists(cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:CompanyID) or u:exists(cac:Party/cac:PartyIdentification/cbc:ID) or u:exists(cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
+    """,
+    "BR-CO-14": """
+    (number(cbc:TaxAmount) = u:round(sum(cac:TaxSubtotal/cbc:TaxAmount), 2)) or not(boolean(cac:TaxSubtotal))
+    """,
+    "BR-47": """
+    u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID)
+    """,
+    "BR-48": """
+    u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent) or (cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.)='O'])
+    """,
+    "BR-CO-17": """
+    (
+        u:round(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent, 0) = 0 and u:round(cbc:TaxAmount, 0) = 0
+    ) or (
+        u:round(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent, 0)!= 0 and (
+            abs(cbc:TaxAmount) - 1 < u:round(abs(cbc:TaxableAmount) * (cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent div 100), 2) and abs(cbc:TaxAmount) + 1 > u:round(abs(cbc:TaxableAmount) * (cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent div 100), 2)
+        )
+    ) or (
+        not(
+            u:exists(
+                cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent
+            )
+        ) and u:round(cbc:TaxAmount, 0) = 0
+    )
+    """,
+    "BR-S-08": """
+    u:for_every(
+        cbc:Percent,
+        u:if_else(
+            u:exists(//cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = current()]/cbc:LineExtensionAmount) or u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount),
+            (
+              ../cbc:TaxableAmount - 1 < (
+                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = current()]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount)
+                )
+                and../cbc:TaxableAmount + 1 > (
+                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = current()]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount)
+                )
+            ),
+            u:if_else(
+                u:exists(//cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = current()]/cbc:LineExtensionAmount) or u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount),
+                (
+                  ../cbc:TaxableAmount - 1 < (
+                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = current()]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount)
+                    )
+                    and../cbc:TaxableAmount + 1 > (
+                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = current()]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = current()]/cbc:Amount)
+                    )
+                ),
+                true()
+            )
+        )
+    )
+    """,
+    "BR-S-09": """
+    (
+        abs(../cbc:TaxAmount) - 1 < u:round((abs(../cbc:TaxableAmount) * (cbc:Percent div 100)), 2)
+    ) and (
+        abs(../cbc:TaxAmount) + 1 > u:round((abs(../cbc:TaxableAmount) * (cbc:Percent div 100)), 2)
+    )
+    """,
+    "UBL-SR-12": """
+        count(cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[u:upper_case(.)='VAT']]/cbc:CompanyID) <= 1
+        """,
+    "UBL-SR-13": """
+        count(cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[u:upper_case(.)!='VAT']]/cbc:CompanyID) <= 1
+        """,
+    "UBL-SR-18": """
+            count(cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[u:upper_case(.)='VAT']]/cbc:CompanyID) <= 1
+        """,
     # PEPPOL
-    "count(cac:TaxTotal[not(cac:TaxSubtotal)]) = (if (cbc:TaxCurrencyCode) then 1 else 0)": "count(cac:TaxTotal[not(cac:TaxSubtotal)]) = u:if_else(//cbc:TaxCurrencyCode, 1, 0)",
-    "some $code in $MIMECODE satisfies @mimeCode = $code": f"contains('{PEPPOL_CONST_MIMECODE}', concat(' ', @mimeCode, ' '))",
-    "some $code in $ISO4217 satisfies @currencyID = $code": f"contains('{PEPPOL_CONST_ISO4217}', concat(' ', @currencyID, ' '))",
-    "$profile != '01' or (some $code in tokenize('71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877', '\\s') satisfies normalize-space(text()) = $code)": "$profile != '01' or contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
-    "some $code in $eaid satisfies @schemeID = $code": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
-    "string-length(text()) = 10 and (string(.) castable as xs:date)": "string-length(text()) = 10 and u:call_elementpath(\"'%s' castable as xs:date\", string(.))",
+    "PEPPOL-EN16931-R054": "count(cac:TaxTotal[not(cac:TaxSubtotal)]) = u:if_else(//cbc:TaxCurrencyCode, 1, 0)",
+    "PEPPOL-EN16931-CL001": f"contains('{PEPPOL_CONST_MIMECODE}', concat(' ', @mimeCode, ' '))",
+    "PEPPOL-EN16931-CL007": f"contains('{PEPPOL_CONST_ISO4217}', concat(' ', @currencyID, ' '))",
+    "PEPPOL-EN16931-P0100": "$profile != '01' or contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
+    "PEPPOL-EN16931-CL008": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
+    "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:call_elementpath(\"'%s' castable as xs:date\", string(.))",
 }

@@ -28,6 +28,7 @@ to_save_ids = []
 to_handle_map: dict[str, str] = {}
 dummy_xml = etree.Element("unused")
 
+gid = ""
 gnsmap = {}
 gvars = {}
 
@@ -106,13 +107,34 @@ def xpath_u_TinVerification(_, val: str):
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
+def xpath_u_checkSEOrgnr(_, number: str):
+    if not re.match(r"^\d+$", number):
+        return False  # Not all digits
+
+    main_part = number[:9]  # First 9 digits
+    check_digit = number[9:]  # Last digit
+
+    sum_digits = 0
+    for pos in range(1, 10):
+        digit = int(main_part[len(main_part) - pos])  # Get digit from right to left
+        if pos % 2 == 1:  # Odd position (from right)
+            doubled = digit * 2
+            sum_digits += (doubled % 10) + (doubled // 10)  # Sum digits of doubled value
+        else:  # Even position
+            sum_digits += digit
+
+    calculated_check_digit = (10 - sum_digits % 10) % 10
+
+    return calculated_check_digit == int(check_digit)
+
+
 def xpath_u_for_some(ctx, item_list_str: str, condition_var: str):
     item_list = item_list_str.split(" ")
 
     for item in item_list:
         test = re.sub(r"\$VAR", item, condition_var)
         if ctx.context_node.xpath(test):
-            ipdb.set_trace()
+            # ipdb.set_trace()
             return True
 
     return False
@@ -121,11 +143,15 @@ def xpath_u_for_some(ctx, item_list_str: str, condition_var: str):
 def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
     global gnsmap, gvars
     item_list = ctx.context_node.xpath(item_list_path, namespaces=gnsmap, **gvars)
+    # ipdb.set_trace()
 
     for item in item_list:
+        if isinstance(item, etree._Element):
+            item = f"'{item.text}'"
         test = re.sub(r"\$VAR", item, condition_var)
         if not ctx.context_node.xpath(test, namespaces=gnsmap, **gvars):
-            ipdb.set_trace()
+            if gid == "BR-CO-15":
+                ipdb.set_trace()
             return False
 
     return True
@@ -147,8 +173,11 @@ def xpath_u_exists(_, value):
 
 
 def xpath_u_round(_, value, precision):
-    # ipdb.set_trace()
     return round(value, int(precision))
+
+
+def xpath_u_upper_case(_, value):
+    return str(value).upper()
 
 
 utils_ns = etree.FunctionNamespace("utils")
@@ -167,6 +196,7 @@ utils_ns["addPIVA"] = xpath_u_addPIVA
 utils_ns["checkPIVAseIT"] = xpath_u_checkPIVAseIT
 utils_ns["abn"] = xpath_u_abn
 utils_ns["TinVerification"] = xpath_u_TinVerification
+utils_ns["checkSEOrgnr"] = xpath_u_checkSEOrgnr
 
 # custom utils
 utils_ns["for_some"] = xpath_u_for_some
@@ -175,6 +205,7 @@ utils_ns["if_else"] = xpath_u_if_else
 utils_ns["call_elementpath"] = xpath_u_call_elementpath
 utils_ns["exists"] = xpath_u_exists
 utils_ns["round"] = xpath_u_round
+utils_ns["upper_case"] = xpath_u_upper_case
 
 
 def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
@@ -290,6 +321,30 @@ def evaluate_abn_function(self, context=None):
 def evaluate_TinVerification_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
+
+
+@method(function("checkSEOrgnr", prefix="u", nargs=1))
+def evaluate_checkSEOrgnr_function(self, context=None):
+    number = self.get_argument(context, default="", cls=str)
+
+    if not re.match(r"^\d+$", number):
+        return False  # Not all digits
+
+    main_part = number[:9]  # First 9 digits
+    check_digit = number[9:]  # Last digit
+
+    sum_digits = 0
+    for pos in range(1, 10):
+        digit = int(main_part[len(main_part) - pos])  # Get digit from right to left
+        if pos % 2 == 1:  # Odd position (from right)
+            doubled = digit * 2
+            sum_digits += (doubled % 10) + (doubled // 10)  # Sum digits of doubled value
+        else:  # Even position
+            sum_digits += digit
+
+    calculated_check_digit = (10 - sum_digits % 10) % 10
+
+    return calculated_check_digit == int(check_digit)
 
 
 class Element(Generic[T]):
@@ -417,11 +472,6 @@ class ElementRule(Element):
 
     def add_assert(self, assert_id: str, flag: str, test: str, message: str):
         # Before appending, "clean" the test first
-        if "satisfies" in test:
-            pass
-            # print(test)
-            # ipdb.set_trace()
-
         clean_test = []
         for i in range(len(test)):
             if i + 1 < len(test) and test[i] == test[i + 1] == " ":
@@ -440,7 +490,7 @@ class ElementRule(Element):
         Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
         strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
         """
-        global tameta, tahack, tvmeta, tvhack, gnsmap, gvars
+        global tameta, tahack, tvmeta, tvhack, gnsmap, gvars, gid
         gnsmap = self.namespaces
         evars = variables_dict and variables_dict.copy() or {}
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
@@ -466,26 +516,31 @@ class ElementRule(Element):
                 return context_node.xpath(path, namespaces=self.namespaces, **evars)
 
             for assert_id, flag, selector, message in self._assertions:
+                gid = assert_id
                 th = time()
                 expected = selector.select(xml, item=context_node, variables=ovars)
                 tahack += time() - th
 
-                test_str = selector.path
-                if "matches" in test_str:
-                    test_str = re.sub(r"matches", "re:match", test_str)
+                if assert_id in TEST_REPLACE_MAP:
+                    test_str = TEST_REPLACE_MAP[assert_id]
+                else:
+                    test_str = selector.path
 
-                if "exists" in test_str:
-                    test_str = re.sub(r"exists", "u:exists", test_str)
+                    if "matches" in test_str:
+                        test_str = re.sub(r"matches", "re:match", test_str)
 
-                if "xs:decimal" in test_str:
-                    test_str = re.sub(r"xs:decimal", "number", test_str)
+                    if "exists" in test_str:
+                        test_str = re.sub(r"exists", "u:exists", test_str)
 
-                # if "satisfies" in test_str:
-                #     if "some" in test_str:
-                #         to_handle_map[test_str] = "contains('{FULL_LIST_CONST}', concat(' ', @varHere, ' '))"
+                    if "xs:decimal" in test_str:
+                        test_str = re.sub(r"xs:decimal", "number", test_str)
 
-                if test_str in TEST_REPLACE_MAP:
-                    test_str = TEST_REPLACE_MAP[test_str]
+                    # if "satisfies" in test_str:
+                    #     if "some" in test_str:
+                    #         to_handle_map[test_str] = "contains('{FULL_LIST_CONST}', concat(' ', @varHere, ' '))"
+
+                    # if test_str in TEST_REPLACE_MAP:
+                    #     test_str = TEST_REPLACE_MAP[test_str]
 
                 try:
                     tm = time()
@@ -493,7 +548,8 @@ class ElementRule(Element):
                     tameta += time() - tm
                     res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
                     if cres == expected:
-                        print("xpath succeeded!", cres)
+                        pass
+                        # print("xpath succeeded!", cres)
                     elif res == expected:
                         print("!!!")
                         print("!!! xpath succeeded only by using root node", assert_id)
@@ -512,8 +568,8 @@ class ElementRule(Element):
                     print(assert_id)
                     print(test_str)
                     print("xpath failed!", e)
-                    ipdb.set_trace()
-                    # to_handle_map[test_str] = test_str
+                    # ipdb.set_trace()
+                    to_handle_map[assert_id] = ""
 
         return warning, fatal
 
@@ -614,3 +670,4 @@ if 2 == 1:
     ipdb.set_trace()
 
 print(to_handle_map)
+print(len(to_handle_map))
