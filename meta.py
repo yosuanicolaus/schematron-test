@@ -25,8 +25,11 @@ tahack = 0.0
 told = 0
 to_save_ids = []
 
-satisfies_ids: dict[str, str] = {}
+to_handle_map: dict[str, str] = {}
 dummy_xml = etree.Element("unused")
+
+gnsmap = {}
+gvars = {}
 
 
 def xpath_u_gln(_, val):
@@ -103,7 +106,7 @@ def xpath_u_TinVerification(_, val: str):
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
-def xpath_u_custom_for_some(ctx, item_list_str: str, condition_var: str):
+def xpath_u_for_some(ctx, item_list_str: str, condition_var: str):
     item_list = item_list_str.split(" ")
 
     for item in item_list:
@@ -115,25 +118,27 @@ def xpath_u_custom_for_some(ctx, item_list_str: str, condition_var: str):
     return False
 
 
-def xpath_u_custom_for_every(ctx, item_list_str: str, condition_var: str):
-    item_list = item_list_str.split(" ")
+def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
+    global gnsmap, gvars
+    item_list = ctx.context_node.xpath(item_list_path, namespaces=gnsmap, **gvars)
 
     for item in item_list:
         test = re.sub(r"\$VAR", item, condition_var)
-        if ctx.context_node.xpath(test):
+        if not ctx.context_node.xpath(test, namespaces=gnsmap, **gvars):
             ipdb.set_trace()
-            return True
+            return False
+
     return True
 
 
-def xpath_u_custom_if_else(_, condition, then_clause, else_clause):
+def xpath_u_if_else(_, condition, then_clause, else_clause):
     if condition:
         return then_clause
     else:
         return else_clause
 
 
-def xpath_u_custom_call_elementpath(_, template: str, value: str):
+def xpath_u_call_elementpath(_, template: str, value: str):
     return elementpath.select(dummy_xml, template % value)
 
 
@@ -141,8 +146,15 @@ def xpath_u_exists(_, value):
     return bool(value)
 
 
+def xpath_u_round(_, value, precision):
+    # ipdb.set_trace()
+    return round(value, int(precision))
+
+
 utils_ns = etree.FunctionNamespace("utils")
 utils_ns.prefix = "u"
+
+# util functions from the peppol schematron
 utils_ns["gln"] = xpath_u_gln
 utils_ns["slack"] = xpath_u_slack
 utils_ns["mod11"] = xpath_u_mod11
@@ -157,11 +169,12 @@ utils_ns["abn"] = xpath_u_abn
 utils_ns["TinVerification"] = xpath_u_TinVerification
 
 # custom utils
-utils_ns["for_some"] = xpath_u_custom_for_some
-utils_ns["for_every"] = xpath_u_custom_for_every
-utils_ns["if_else"] = xpath_u_custom_if_else
-utils_ns["call_elementpath"] = xpath_u_custom_call_elementpath
+utils_ns["for_some"] = xpath_u_for_some
+utils_ns["for_every"] = xpath_u_for_every
+utils_ns["if_else"] = xpath_u_if_else
+utils_ns["call_elementpath"] = xpath_u_call_elementpath
 utils_ns["exists"] = xpath_u_exists
+utils_ns["round"] = xpath_u_round
 
 
 def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
@@ -427,7 +440,8 @@ class ElementRule(Element):
         Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
         strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
         """
-        global tameta, tahack, tvmeta, tvhack
+        global tameta, tahack, tvmeta, tvhack, gnsmap, gvars
+        gnsmap = self.namespaces
         evars = variables_dict and variables_dict.copy() or {}
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
         warning, fatal = [], []
@@ -446,6 +460,11 @@ class ElementRule(Element):
                     # xpath variables only accepts strings. For list variables, use space-separated values
                     evars[k] = " ".join(v)
 
+            gvars = evars
+
+            def cdbg(path):
+                return context_node.xpath(path, namespaces=self.namespaces, **evars)
+
             for assert_id, flag, selector, message in self._assertions:
                 th = time()
                 expected = selector.select(xml, item=context_node, variables=ovars)
@@ -458,9 +477,12 @@ class ElementRule(Element):
                 if "exists" in test_str:
                     test_str = re.sub(r"exists", "u:exists", test_str)
 
+                if "xs:decimal" in test_str:
+                    test_str = re.sub(r"xs:decimal", "number", test_str)
+
                 # if "satisfies" in test_str:
                 #     if "some" in test_str:
-                #         satisfies_ids[test_str] = "contains('{FULL_LIST_CONST}', concat(' ', @varHere, ' '))"
+                #         to_handle_map[test_str] = "contains('{FULL_LIST_CONST}', concat(' ', @varHere, ' '))"
 
                 if test_str in TEST_REPLACE_MAP:
                     test_str = TEST_REPLACE_MAP[test_str]
@@ -485,13 +507,13 @@ class ElementRule(Element):
                             warning.append(assert_message)
                         elif flag == "fatal":
                             fatal.append(assert_message)
-                            success = False
 
                 except Exception as e:
                     print(assert_id)
                     print(test_str)
                     print("xpath failed!", e)
                     ipdb.set_trace()
+                    # to_handle_map[test_str] = test_str
 
         return warning, fatal
 
@@ -591,4 +613,4 @@ if 2 == 1:
     # To keep the import from deleted by autocomplete
     ipdb.set_trace()
 
-print(satisfies_ids)
+print(to_handle_map)
