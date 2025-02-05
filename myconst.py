@@ -38,6 +38,14 @@ TEST_MAP: dict[str, TestMapValue] = {
         "schematron_paths": (SCHEMATRON_TSR_PATH,),
         "test_file_path": TEST_TSR_PATH,
     },
+    "justcen": {
+        "schematron_paths": (SCHEMATRON_CEN_PATH,),
+        "test_file_path": TEST_INVOICE_PATH,
+    },
+    "justcen100": {
+        "schematron_paths": (SCHEMATRON_CEN_PATH,),
+        "test_file_path": TEST_INVOICE100_PATH,
+    },
     "justpeppol": {
         "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
         "test_file_path": TEST_INVOICE_PATH,
@@ -134,7 +142,11 @@ FOR_REPLACE_MAP: dict[str, ForReplaceMapItemValue] = {
     # "SCH-TSR-34": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
 }
 
-TEST_REPLACE_MAP = {
+VARIABLE_REPLACE_MAP = {
+    # TODO
+}
+
+ASSERT_REPLACE_MAP = {
     # CEN
     "BR-CO-10": "number(cbc:LineExtensionAmount) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
     "BR-CO-12": "number(cbc:AllowanceTotalAmount) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
@@ -226,7 +238,10 @@ TEST_REPLACE_MAP = {
     )
     """,
     "BR-CO-15": """
-        u:for_every('cbc:DocumentCurrencyCode', '(count(cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR]) = 1) and (number(cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount) = u:round(cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount + cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR], 2))')
+    u:for_every(
+        'cbc:DocumentCurrencyCode',
+        '(count(cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR]) = 1) and (number(cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount) = u:round(cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount + cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR], 2))'
+    )
     """,
     "BR-E-01": """
     (

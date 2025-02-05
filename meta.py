@@ -10,7 +10,7 @@ from lxml.etree import _Element
 from rich.pretty import pprint
 from saxonche import PySaxonProcessor
 
-from myconst import PATH_ROOT_MAP, TEST_MAP, TEST_REPLACE_MAP
+from myconst import ASSERT_REPLACE_MAP, PATH_ROOT_MAP, TEST_MAP, VARIABLE_REPLACE_MAP
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
@@ -18,10 +18,16 @@ method = parser.method
 function = parser.function
 T = TypeVar("T", bound="Element")
 
-tvmeta = 0.0
-tvhack = 0.0
-tameta = 0.0
-tahack = 0.0
+times: dict[str, float] = {
+    "evar_old": 0.0,
+    "evar_meta": 0.0,
+    "ctxn_old": 0.0,
+    "ctxn_meta": 0.0,
+    "var_old": 0.0,
+    "var_meta": 0.0,
+    "assert_old": 0.0,
+    "assert_meta": 0.0,
+}
 told = 0
 to_save_ids = []
 
@@ -29,8 +35,42 @@ to_handle_map: dict[str, str] = {}
 dummy_xml = etree.Element("unused")
 
 gid = ""
+gxml = dummy_xml
 gnsmap = {}
 gvars = {}
+
+
+# Helper Methods
+
+
+def cdbg(path: str, **kwargs):
+    # Just for debugging, remove when done
+    return gxml.xpath(path, namespaces=gnsmap, **gvars, **kwargs)
+
+
+def _xpath_clean_value(value):
+    if not value:
+        return ""
+    if isinstance(value, list):
+        value = value[0]
+    if isinstance(value, _Element):
+        value = value.text or ""
+    return str(value)
+
+
+def _clean_xpath_query(path: str) -> str:
+    """
+    Strip and replace all multiple space with a single space
+    """
+    clean_path_list = []
+    for i in range(len(path)):
+        if i + 1 < len(path) and path[i] == path[i + 1] == " ":
+            continue
+        clean_path_list.append(path[i])
+    return "".join(clean_path_list).strip()
+
+
+# LXML XPath Methods
 
 
 def xpath_u_gln(_, val):
@@ -154,16 +194,6 @@ def xpath_u_call_elementpath(_, template: str, value: str):
 
 def xpath_u_exists(_, value):
     return bool(value)
-
-
-def _xpath_clean_value(value):
-    if not value:
-        return ""
-    if isinstance(value, list):
-        value = value[0]
-    if isinstance(value, _Element):
-        value = value.text or ""
-    return str(value)
 
 
 def xpath_u_round(_, value, precision):
@@ -365,7 +395,7 @@ class Element(Generic[T]):
         self.root_name: Optional[str] = parent and parent.root_name
 
     def add_variable(self, name, path):
-        self._variables.append((name, elementpath.Selector(path, namespaces=self.namespaces, parser=parser)))
+        self._variables.append((name, elementpath.Selector(_clean_xpath_query(path), namespaces=self.namespaces, parser=parser)))
 
     @property
     def variables(self):
@@ -374,15 +404,40 @@ class Element(Generic[T]):
         else:
             return self._variables
 
-    def run(self, xml, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
+    def run(self, xml: _Element, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
-        evaluated_variables = variables_dict and variables_dict.copy() or {}
+        global times, gxml, gvars
+        ovars = variables_dict and variables_dict.copy() or {}
+        evars = variables_dict and variables_dict.copy() or {}
+        gvars = evars
+        gxml = xml
+
         for name, selector in self._variables:
-            evaluated_variables.update({name: selector.select(xml, variables=evaluated_variables)})
+            tt = time()
+            ovars.update({name: selector.select(xml, variables=ovars)})
+            times["evar_old"] += time() - tt
+
+            if name in VARIABLE_REPLACE_MAP:
+                path_str = VARIABLE_REPLACE_MAP[name]
+            else:
+                path_str = selector.path
+            try:
+                tt = time()
+                var_val = xml.xpath(path_str, namespaces=self.namespaces, **evars)
+                times["evar_meta"] += time() - tt
+                evars[name] = var_val
+            except Exception as e:
+                print("evars get var failed!:", e)
+                print(path_str)
+                ipdb.set_trace()
+
+            # evars.update({name: })
+
+            ipdb.set_trace()
 
         warning, fatal = [], []
         for child in self.children:
-            res_warning, res_fatal = child.run(xml, variables_dict=evaluated_variables)
+            res_warning, res_fatal = child.run(xml, variables_dict=ovars)
             warning += res_warning
             fatal += res_fatal
 
@@ -481,13 +536,7 @@ class ElementRule(Element):
 
     def add_assert(self, assert_id: str, flag: str, test: str, message: str):
         # Before appending, "clean" the test first
-        clean_test = []
-        for i in range(len(test)):
-            if i + 1 < len(test) and test[i] == test[i + 1] == " ":
-                continue
-            clean_test.append(test[i])
-
-        test = "".join(clean_test).strip()
+        test = _clean_xpath_query(test)
         test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
         self._assertions.append((assert_id, flag, test_selector, message))
 
@@ -499,19 +548,23 @@ class ElementRule(Element):
         Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
         strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
         """
-        global tameta, tahack, tvmeta, tvhack, gnsmap, gvars, gid
+        global times, gnsmap, gvars, gid, gxml
         gnsmap = self.namespaces
         evars = variables_dict and variables_dict.copy() or {}
+        tt = time()
         context_nodes = self.context_selector.select(xml, variables=variables_dict)
+        times["ctxn_old"] += time() - tt
         warning, fatal = [], []
 
         for context_node in context_nodes:
             # If the rule has additional variable, we evaluate them here.
             ovars = variables_dict and variables_dict.copy() or {}
             if self._variables:
+                tt = time()
                 for name, selector in self._variables:
                     oselect = selector.select(xml, item=context_node, variables=ovars)
                     ovars.update({name: oselect})
+                times["var_old"] += time() - tt
 
             evars = ovars.copy()
             for k, v in evars.items():
@@ -519,19 +572,17 @@ class ElementRule(Element):
                     # xpath variables only accepts strings. For list variables, use space-separated values
                     evars[k] = " ".join(v)
 
+            gxml = context_node
             gvars = evars
-
-            def cdbg(path):
-                return context_node.xpath(path, namespaces=self.namespaces, **evars)
 
             for assert_id, flag, selector, message in self._assertions:
                 gid = assert_id
-                th = time()
+                tt = time()
                 expected = selector.select(xml, item=context_node, variables=ovars)
-                tahack += time() - th
+                times["assert_old"] += time() - tt
 
-                if assert_id in TEST_REPLACE_MAP:
-                    test_str = TEST_REPLACE_MAP[assert_id]
+                if assert_id in ASSERT_REPLACE_MAP:
+                    test_str = ASSERT_REPLACE_MAP[assert_id]
                 else:
                     test_str = selector.path
 
@@ -545,18 +596,17 @@ class ElementRule(Element):
                         test_str = re.sub(r"xs:decimal", "number", test_str)
 
                 try:
-                    tm = time()
+                    tt = time()
                     cres = context_node.xpath(test_str, namespaces=self.namespaces, **evars)
-                    tameta += time() - tm
-                    res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
+                    times["assert_meta"] += time() - tt
                     if cres == expected:
                         pass
-                        # print("xpath succeeded!", cres)
-                    elif res == expected:
-                        print("!!!")
-                        print("!!! xpath succeeded only by using root node", assert_id)
-                        print("!!!")
                     else:
+                        res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
+                        if res == expected:
+                            print("!!!")
+                            print("!!! xpath succeeded only by using root node", assert_id)
+                            print("!!!")
                         raise Exception("xpath succeeded but wrong result!")
 
                     if not cres:
@@ -576,27 +626,8 @@ class ElementRule(Element):
         return warning, fatal
 
 
-def print_time(name: str, start_time: float, force=False):
-    """
-    To be used like:
-
-    if print_time("funcname", tt):
-        # potentially run debugger here
-        pass
-
-    :return: if True, the time spent is "significant"
-    """
-    finish_time = time()
-    total_time = finish_time - start_time
-
-    if force or total_time > 0.05:  # significant
-        print(f"timed {name}: {total_time}")
-        return True
-
-    return False
-
-
 def run_schematron(name: str):
+    global times
     if name not in TEST_MAP:
         raise Exception("Invalid schematron argument!")
 
@@ -605,16 +636,18 @@ def run_schematron(name: str):
 
     for schematron_path in schematron_paths:
         root_name = PATH_ROOT_MAP[schematron_path]
-        print(f"Running {root_name} schematron")
+        print(f"Running {root_name} schematron on {test_file_path}")
         schematron = ElementSchematron.from_sch(etree.parse(schematron_path).getroot(), root_name)
         doc = etree.parse(test_file_path).getroot()
         warning, fatal = schematron.run(doc)
-        if warning:
-            print("Warning:")
-            pprint(warning)
-        if fatal:
-            print("Fatal:")
-            pprint(fatal)
+        print("Times:")
+        pprint(times, expand_all=True)
+        print("Warning:")
+        pprint(warning)
+        print("Fatal:")
+        pprint(fatal)
+        print(sum(times.values()))
+        times = {k: 0.0 for k in times}  # reset times for the next schematron
 
 
 def main():
@@ -623,14 +656,9 @@ def main():
         saxonche()
         return
 
-    print("Running", to_run.upper())
-    tta = time()
+    tt = time()
     run_schematron(to_run)
-    pprint(time() - tta)
-    print(f"total tmeta: {tameta}")
-    print(f"total thack: {tahack}")
-    # print(to_save_ids)
-    print(len(to_save_ids))
+    pprint(time() - tt)
 
 
 def saxonche():
@@ -638,30 +666,21 @@ def saxonche():
     with PySaxonProcessor(license=False) as proc:
         xsltproc = proc.new_xslt30_processor()
         peppol_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/peppol.xsl")
+        cen_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/cen.xsl")
 
     with PySaxonProcessor(license=False):
-        output = peppol_sch.transform_to_string(source_file=TEST_MAP["peppol100"]["test_file_path"])
-        svrl = etree.fromstring(output.encode()).getroottree()
-        warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
-        fatal = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="fatal"]')]
-
-        print("Warning:")
-        pprint(warning)
-        print("Fatal:")
-        pprint(fatal)
+        for sch in (cen_sch, peppol_sch):
+            print(f"Running {'CEN' if sch == cen_sch else 'PEPPOL'}")
+            output = sch.transform_to_string(source_file=TEST_MAP["peppol100"]["test_file_path"])
+            svrl = etree.fromstring(output.encode()).getroottree()
+            warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
+            fatal = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="fatal"]')]
+            print("Warning:")
+            pprint(warning)
+            print("Fatal:")
+            pprint(fatal)
 
     print(time() - tt)
-
-    # CEN_EN16931_UBL, PEPPOL_EN16931_UBL, EUSR, TSR, NLCIUS = (
-    #     xsltproc.compile_stylesheet(stylesheet_file=get_module_resource(*SCHEMATRON_PATH, fname))
-    #     for fname in (
-    #         "CEN-EN16931-UBL.xsl",
-    #         "PEPPOL-EN16931-UBL.xsl",
-    #         "peppol-end-user-statistics-reporting-1.1.5.xsl",
-    #         "peppol-transaction-statistics-reporting-1.0.5.xsl",
-    #         "si-ubl-2.0.xsl",
-    #     )
-    # )
 
 
 if __name__ == "__main__":
