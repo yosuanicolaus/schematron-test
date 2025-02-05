@@ -86,64 +86,89 @@ PEPPOL_CONST_UNCL7161 = " AA AAA AAC AAD AAE AAF AAH AAI AAS AAT AAV AAY AAZ ABA
 PEPPOL_CONST_UNCL5305 = " AE E S Z G O K L M "
 PEPPOL_CONST_EAID = " 0002 0007 0009 0037 0060 0088 0096 0097 0106 0130 0135 0142 0151 0183 0184 0188 0190 0191 0192 0193 0195 0196 0198 0199 0200 0201 0202 0204 0208 0209 0210 0211 0212 0213 0215 0216 0218 0221 0230 9901 9910 9913 9914 9915 9918 9919 9920 9922 9923 9924 9925 9926 9927 9928 9929 9930 9931 9932 9933 9934 9935 9936 9937 9938 9939 9940 9941 9942 9943 9944 9945 9946 9947 9948 9949 9950 9951 9952 9953 9957 9959 "
 
-
-class ForReplaceMapItemValue(TypedDict):
-    pattern: str
-    replacement: str
+PEPPOL_CONST_GREEK_GDT = " 1.1 1.6 2.1 2.4 5.1 5.2 "
+PEPPOL_CONST_GREEK_TUID = ""  # depends on cbc:IssueDate! TODO USE GREEK INVOICE
 
 
-# Map of Assert IDs -> Dictionary of pattern and replacement
-FOR_REPLACE_MAP: dict[str, ForReplaceMapItemValue] = {
-    #######
-    # CEN #
-    #######
-    "BR-53": {
-        "pattern": "every $taxcurrency in cbc:TaxCurrencyCode satisfies exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$taxcurrency])",
-        "replacement": "u:for_every(taxcurrency, cbc:TaxCurrencyCode, exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$taxcurrency]))",
-    },
-    # "BR-CO-15": "every $Currency in cbc:DocumentCurrencyCode satisfies (count(cac:TaxTotal/xs:decimal(cbc:TaxAmount[@currencyID=$Currency])) eq 1) and (cac:LegalMonetaryTotal/xs:decimal(cbc:TaxInclusiveAmount) = round( (cac:LegalMonetaryTotal/xs:decimal(cbc:TaxExclusiveAmount) + cac:TaxTotal/xs:decimal(cbc:TaxAmount[@currencyID=$Currency])) * 10 * 10) div 100)",
-    # "BR-S-08": "every $rate in xs:decimal(cbc:Percent) satisfies (((exists(//cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/normalize-space(cbc:ID) = 'S'][cac:Item/cac:ClassifiedTaxCategory/xs:decimal(cbc:Percent) =$rate]) or exists(//cac:AllowanceCharge[cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate])) and ((../xs:decimal(cbc:TaxableAmount - 1) < (sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/normalize-space(cbc:ID)='S'][cac:Item/cac:ClassifiedTaxCategory/xs:decimal(cbc:Percent) =$rate]/xs:decimal(cbc:LineExtensionAmount)) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)))) and (../xs:decimal(cbc:TaxableAmount + 1) > (sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/normalize-space(cbc:ID)='S'][cac:Item/cac:ClassifiedTaxCategory/xs:decimal(cbc:Percent) =$rate]/xs:decimal(cbc:LineExtensionAmount)) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)))))) or (exists(//cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/normalize-space(cbc:ID) = 'S'][cac:Item/cac:ClassifiedTaxCategory/xs:decimal(cbc:Percent) =$rate]) or exists(//cac:AllowanceCharge[cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate])) and ((../xs:decimal(cbc:TaxableAmount - 1) < (sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/normalize-space(cbc:ID)='S'][cac:Item/cac:ClassifiedTaxCategory/xs:decimal(cbc:Percent) =$rate]/xs:decimal(cbc:LineExtensionAmount)) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)))) and (../xs:decimal(cbc:TaxableAmount + 1) > (sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/normalize-space(cbc:ID)='S'][cac:Item/cac:ClassifiedTaxCategory/xs:decimal(cbc:Percent) =$rate]/xs:decimal(cbc:LineExtensionAmount)) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount)) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/normalize-space(cbc:ID)='S'][cac:TaxCategory/xs:decimal(cbc:Percent) = $rate]/xs:decimal(cbc:Amount))))))",
-    ##########
-    # PEPPOL #
-    ##########
-    "PEPPOL-EN16931-CL001": {
-        "pattern": "",  # Empty pattern means replace everything
-        "replacement": f"contains('{PEPPOL_CONST_MIMECODE}', concat(' ', @mimeCode, ' '))",
-    },
-    "PEPPOL-EN16931-CL007": {
-        "pattern": "",
-        "replacement": f"contains('{PEPPOL_CONST_ISO4217}', concat(' ', @currencyID, ' '))",
-    },
-    "PEPPOL-EN16931-P0100": {
-        "pattern": r"some \$code in tokenize\('71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877', '\\s'\) satisfies normalize-space\(text\(\)\) = \$code",
-        "replacement": "contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
-    },
-    "PEPPOL-EN16931-CL008": {
-        "pattern": "",
-        "replacement": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
-    },
-    # "PEPPOL-EN16931-CL001": "some $code in $MIMECODE satisfies @mimeCode = $code",
-    # "PEPPOL-EN16931-CL007": "some $code in $ISO4217 satisfies @currencyID = $code",
-    # "PEPPOL-EN16931-P0100": "some $code in tokenize('71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877', '\\s') satisfies normalize-space(text()) = $code",
-    # "PEPPOL-EN16931-CL008": "some $code in $eaid satisfies @schemeID = $code",
-    ########
-    # EUSR #
-    ########
-    # "SCH-EUSR-40": "every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies count(eusr:Subset[normalize-space(@type) ='PerEUC'][every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies normalize-space($euc) = normalize-space($steuc)]) = 1",
-    # "SCH-EUSR-33": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) <= xs:integer($st/eusr:SendingEndUsers + $st/eusr:ReceivingEndUsers)",
-    # "SCH-EUSR-34": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) >= xs:integer($st/eusr:SendingEndUsers)",
-    # "SCH-EUSR-35": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) >= xs:integer($st/eusr:ReceivingEndUsers)",
-    # "SCH-EUSR-36": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) > 0",
-    #######
-    # TSR #
-    #######
-    # "SCH-TSR-06": "every $key in (tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key) satisfies count(tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key[concat(normalize-space(@schemeID),'::',normalize-space(.)) = concat(normalize-space($key/@schemeID),'::',normalize-space($key))]) = 1",
-    # "SCH-TSR-28": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
-    # "SCH-TSR-34": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
+# TODO next?
+########
+# EUSR #
+########
+# "SCH-EUSR-40": "every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies count(eusr:Subset[normalize-space(@type) ='PerEUC'][every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies normalize-space($euc) = normalize-space($steuc)]) = 1",
+# "SCH-EUSR-33": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) <= xs:integer($st/eusr:SendingEndUsers + $st/eusr:ReceivingEndUsers)",
+# "SCH-EUSR-34": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) >= xs:integer($st/eusr:SendingEndUsers)",
+# "SCH-EUSR-35": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) >= xs:integer($st/eusr:ReceivingEndUsers)",
+# "SCH-EUSR-36": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) > 0",
+#######
+# TSR #
+#######
+# "SCH-TSR-06": "every $key in (tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key) satisfies count(tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key[concat(normalize-space(@schemeID),'::',normalize-space(.)) = concat(normalize-space($key/@schemeID),'::',normalize-space($key))]) = 1",
+# "SCH-TSR-28": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
+# "SCH-TSR-34": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
+
+# TODO: replace all asserts that uses these variables
+VARIABLE_TO_IGNORE = {
+    "greekDocumentType",
+    "tokenizedUblIssueDate",
+    "ISO3166",
+    "ISO4217",
+    "MIMECODE",
+    "UNCL2005",
+    "UNCL5189",
+    "UNCL7161",
+    "UNCL5305",
+    "eaid",
 }
 
+
 VARIABLE_REPLACE_MAP = {
-    # TODO
+    "profile": """
+        u:if_else(
+            /*/cbc:ProfileID and re:match(normalize-space(/*/cbc:ProfileID), 'urn:fdc:peppol.eu:2017:poacc:billing:([0-9]{2}):1.0'),
+            u:tokenize_and_index(normalize-space(/*/cbc:ProfileID), ':', 7),
+            'Unknown'
+        )
+    """,
+    "supplierCountry": """
+        u:if_else(
+            /*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
+            u:upper_case(normalize-space(substring(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
+            u:if_else(
+                /*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
+                u:upper_case(normalize-space(substring(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
+                u:if_else(
+                    /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode,
+                    u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)),
+                    'XX'
+                )
+            )
+        )
+    """,
+    "customerCountry": """
+        u:if_else(
+            /*/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
+            u:upper_case(normalize-space(substring(/*/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
+            u:if_else(
+                /*/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode,
+                u:upper_case(normalize-space(/*/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)),
+                'XX'
+            )
+        )
+    """,
+    "accountingSupplierCountry": """
+        u:if_else(
+            /*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
+            u:upper_case(normalize-space(substring(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
+            u:if_else(
+                /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode,
+                u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)),
+                'XX'
+            )
+        )
+    """,
+    "supplierCountryIsNL": "(u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
+    "customerCountryIsNL": "(u:upper_case(normalize-space(/*/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
+    "taxRepresentativeCountryIsNL": "(u:upper_case(normalize-space(/*/cac:TaxRepresentativeParty/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
 }
 
 ASSERT_REPLACE_MAP = {

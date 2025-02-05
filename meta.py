@@ -10,7 +10,13 @@ from lxml.etree import _Element
 from rich.pretty import pprint
 from saxonche import PySaxonProcessor
 
-from myconst import ASSERT_REPLACE_MAP, PATH_ROOT_MAP, TEST_MAP, VARIABLE_REPLACE_MAP
+from myconst import (
+    ASSERT_REPLACE_MAP,
+    PATH_ROOT_MAP,
+    TEST_MAP,
+    VARIABLE_REPLACE_MAP,
+    VARIABLE_TO_IGNORE,
+)
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
@@ -219,6 +225,16 @@ def xpath_u_abs(_, value):
     return abs(value)
 
 
+def xpath_u_tokenize_and_index(_, text, delimiter, index):
+    if not text:
+        return ""
+    try:
+        tokens = text.split(delimiter)
+        return tokens[int(index) - 1] if 0 < int(index) <= len(tokens) else ""  # Handle out-of-bounds
+    except (ValueError, IndexError):
+        return ""  # Handle invalid index or split errors
+
+
 utils_ns = etree.FunctionNamespace("utils")
 utils_ns.prefix = "u"
 
@@ -245,6 +261,7 @@ utils_ns["exists"] = xpath_u_exists
 utils_ns["round"] = xpath_u_round
 utils_ns["upper_case"] = xpath_u_upper_case
 utils_ns["abs"] = xpath_u_abs
+utils_ns["tokenize_and_index"] = xpath_u_tokenize_and_index
 
 
 def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
@@ -406,34 +423,42 @@ class Element(Generic[T]):
 
     def run(self, xml: _Element, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
-        global times, gxml, gvars
+        global times, gxml, gvars, gnsmap, gid
         ovars = variables_dict and variables_dict.copy() or {}
         evars = variables_dict and variables_dict.copy() or {}
         gvars = evars
+        gnsmap = self.namespaces
         gxml = xml
 
         for name, selector in self._variables:
+            gid = name
             tt = time()
-            ovars.update({name: selector.select(xml, variables=ovars)})
+            ovar_val = selector.select(xml, variables=ovars)
+            if isinstance(ovar_val, list) and len(ovar_val) == 1:
+                ovar_val = ovar_val[0]
+            ovars.update({name: ovar_val})
             times["evar_old"] += time() - tt
 
-            if name in VARIABLE_REPLACE_MAP:
+            if name in VARIABLE_TO_IGNORE:
+                continue
+            elif name in VARIABLE_REPLACE_MAP:
                 path_str = VARIABLE_REPLACE_MAP[name]
             else:
                 path_str = selector.path
             try:
                 tt = time()
                 var_val = xml.xpath(path_str, namespaces=self.namespaces, **evars)
-                times["evar_meta"] += time() - tt
+                if isinstance(var_val, list) and len(var_val) == 1:
+                    var_val = var_val[0]
                 evars[name] = var_val
+                times["evar_meta"] += time() - tt
+                if var_val != ovar_val:
+                    raise Exception("wrong variable value!!")
             except Exception as e:
-                print("evars get var failed!:", e)
+                print(f"evars get {name} var failed!:", e)
                 print(path_str)
+                to_handle_map[name] = ""
                 ipdb.set_trace()
-
-            # evars.update({name: })
-
-            ipdb.set_trace()
 
         warning, fatal = [], []
         for child in self.children:
