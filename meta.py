@@ -128,30 +128,14 @@ def xpath_u_checkSEOrgnr(_, number: str):
     return calculated_check_digit == int(check_digit)
 
 
-def xpath_u_for_some(ctx, item_list_str: str, condition_var: str):
-    item_list = item_list_str.split(" ")
-
-    for item in item_list:
-        test = re.sub(r"\$VAR", item, condition_var)
-        if ctx.context_node.xpath(test):
-            # ipdb.set_trace()
-            return True
-
-    return False
-
-
 def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
-    global gnsmap, gvars
     item_list = ctx.context_node.xpath(item_list_path, namespaces=gnsmap, **gvars)
-    # ipdb.set_trace()
 
     for item in item_list:
         if isinstance(item, etree._Element):
             item = f"'{item.text}'"
         test = re.sub(r"\$VAR", item, condition_var)
         if not ctx.context_node.xpath(test, namespaces=gnsmap, **gvars):
-            if gid == "BR-CO-15":
-                ipdb.set_trace()
             return False
 
     return True
@@ -172,12 +156,37 @@ def xpath_u_exists(_, value):
     return bool(value)
 
 
+def _xpath_clean_value(value):
+    if not value:
+        return ""
+    if isinstance(value, list):
+        value = value[0]
+    if isinstance(value, _Element):
+        value = value.text or ""
+    return str(value)
+
+
 def xpath_u_round(_, value, precision):
+    if not value:
+        return 0
+    value = float(_xpath_clean_value(value))
     return round(value, int(precision))
 
 
 def xpath_u_upper_case(_, value):
+    value = _xpath_clean_value(value)
     return str(value).upper()
+
+
+def xpath_u_abs(_, value):
+    if not value:
+        return 0
+    strvalue = _xpath_clean_value(value)
+    try:
+        value = int(strvalue)
+    except ValueError:
+        value = float(strvalue)
+    return abs(value)
 
 
 utils_ns = etree.FunctionNamespace("utils")
@@ -199,13 +208,13 @@ utils_ns["TinVerification"] = xpath_u_TinVerification
 utils_ns["checkSEOrgnr"] = xpath_u_checkSEOrgnr
 
 # custom utils
-utils_ns["for_some"] = xpath_u_for_some
 utils_ns["for_every"] = xpath_u_for_every
 utils_ns["if_else"] = xpath_u_if_else
 utils_ns["call_elementpath"] = xpath_u_call_elementpath
 utils_ns["exists"] = xpath_u_exists
 utils_ns["round"] = xpath_u_round
 utils_ns["upper_case"] = xpath_u_upper_case
+utils_ns["abs"] = xpath_u_abs
 
 
 def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
@@ -535,13 +544,6 @@ class ElementRule(Element):
                     if "xs:decimal" in test_str:
                         test_str = re.sub(r"xs:decimal", "number", test_str)
 
-                    # if "satisfies" in test_str:
-                    #     if "some" in test_str:
-                    #         to_handle_map[test_str] = "contains('{FULL_LIST_CONST}', concat(' ', @varHere, ' '))"
-
-                    # if test_str in TEST_REPLACE_MAP:
-                    #     test_str = TEST_REPLACE_MAP[test_str]
-
                 try:
                     tm = time()
                     cres = context_node.xpath(test_str, namespaces=self.namespaces, **evars)
@@ -568,7 +570,7 @@ class ElementRule(Element):
                     print(assert_id)
                     print(test_str)
                     print("xpath failed!", e)
-                    # ipdb.set_trace()
+                    ipdb.set_trace()
                     to_handle_map[assert_id] = ""
 
         return warning, fatal
