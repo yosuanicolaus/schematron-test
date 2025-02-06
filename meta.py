@@ -1,5 +1,6 @@
 import re
 import sys
+from decimal import Decimal
 from time import time
 from typing import Generic, List, Optional, Tuple, TypeVar
 
@@ -13,6 +14,7 @@ from saxonche import PySaxonProcessor
 from myconst import (
     ASSERT_REPLACE_MAP,
     PATH_ROOT_MAP,
+    QUERY_REPLACE_MAP,
     TEST_MAP,
     VARIABLE_REPLACE_MAP,
     VARIABLE_TO_IGNORE,
@@ -264,13 +266,6 @@ utils_ns["abs"] = xpath_u_abs
 utils_ns["tokenize_and_index"] = xpath_u_tokenize_and_index
 
 
-def make_if_statement(condition: str, true_statement: str, false_statement: str) -> str:
-    return f"""if ({condition}):
-    {true_statement}
-else:
-    {false_statement}"""
-
-
 ################################################################################
 # Parser Functions
 ################################################################################
@@ -421,11 +416,11 @@ class Element(Generic[T]):
         else:
             return self._variables
 
-    def run(self, xml: _Element, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
+    def run(self, xml: _Element, evars_dict: Optional[dict] = None, ovars_dict=None) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
         global times, gxml, gvars, gnsmap, gid
-        ovars = variables_dict and variables_dict.copy() or {}
-        evars = variables_dict and variables_dict.copy() or {}
+        ovars = ovars_dict and ovars_dict.copy() or {}
+        evars = evars_dict and evars_dict.copy() or {}
         gvars = evars
         gnsmap = self.namespaces
         gxml = xml
@@ -436,7 +431,8 @@ class Element(Generic[T]):
             ovar_val = selector.select(xml, variables=ovars)
             if isinstance(ovar_val, list) and len(ovar_val) == 1:
                 ovar_val = ovar_val[0]
-            ovars.update({name: ovar_val})
+            # ovars.update({name: ovar_val})
+            ovars[name] = ovar_val
             times["evar_old"] += time() - tt
 
             if name in VARIABLE_TO_IGNORE:
@@ -457,12 +453,12 @@ class Element(Generic[T]):
             except Exception as e:
                 print(f"evars get {name} var failed!:", e)
                 print(path_str)
-                to_handle_map[name] = ""
+                to_handle_map[name] = path_str
                 ipdb.set_trace()
 
         warning, fatal = [], []
         for child in self.children:
-            res_warning, res_fatal = child.run(xml, variables_dict=ovars)
+            res_warning, res_fatal = child.run(xml, evars_dict=evars, ovars_dict=ovars)
             warning += res_warning
             fatal += res_fatal
 
@@ -553,7 +549,13 @@ class ElementRule(Element):
             if not or_context.startswith("/"):
                 split_context[i] = f"//{or_context}"
         context = " | ".join(split_context)
-        self.context_selector = elementpath.Selector(context, namespaces=self.namespaces, parser=parser)
+        context = _clean_xpath_query(context)
+
+        self.context_path = QUERY_REPLACE_MAP.get(context, context)
+        # remove when done
+        if self.context_path == "":
+            self.context_path = context
+        self.context_selector = elementpath.Selector(_clean_xpath_query(context), namespaces=self.namespaces, parser=parser)
 
         # List of 4 element tuples, consisting of assert_id, flag, test (selector), message
         self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
@@ -565,7 +567,7 @@ class ElementRule(Element):
         test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
         self._assertions.append((assert_id, flag, test_selector, message))
 
-    def run(self, xml: _Element, variables_dict: Optional[dict] = None):
+    def run(self, xml: _Element, evars_dict: Optional[dict] = None, ovars_dict: Optional[dict] = None):
         """
         This method overrides Element.run function because ElementRule is at the bottom of the Element tree,
         and it does not have any children.
@@ -575,27 +577,68 @@ class ElementRule(Element):
         """
         global times, gnsmap, gvars, gid, gxml
         gnsmap = self.namespaces
-        evars = variables_dict and variables_dict.copy() or {}
+        ovars_dict = ovars_dict and ovars_dict.copy() or {}
+        evars_dict = evars_dict and evars_dict.copy() or {}
         tt = time()
-        context_nodes = self.context_selector.select(xml, variables=variables_dict)
+        context_nodes = self.context_selector.select(xml, variables=ovars_dict)
         times["ctxn_old"] += time() - tt
+
+        try:
+            tt = time()
+            meta_nodes = xml.xpath(self.context_path, namespaces=self.namespaces, **evars_dict)
+            times["ctxn_meta"] += time() - tt
+            if meta_nodes != context_nodes:
+                raise Exception("success but wrong result!")
+        except Exception as e:
+            print("meta nodes failed!", e)
+            # print(self.context_selector.path)
+            print(self.context_path)
+            to_handle_map[self.context_path] = ""
+            ipdb.set_trace()
+
         warning, fatal = [], []
 
         for context_node in context_nodes:
             # If the rule has additional variable, we evaluate them here.
-            ovars = variables_dict and variables_dict.copy() or {}
-            if self._variables:
-                tt = time()
-                for name, selector in self._variables:
-                    oselect = selector.select(xml, item=context_node, variables=ovars)
-                    ovars.update({name: oselect})
-                times["var_old"] += time() - tt
+            ovars = ovars_dict.copy()
+            evars = evars_dict.copy()
 
-            evars = ovars.copy()
-            for k, v in evars.items():
-                if isinstance(v, list) and not isinstance(v[0], _Element):
-                    # xpath variables only accepts strings. For list variables, use space-separated values
-                    evars[k] = " ".join(v)
+            if self._variables:
+                for name, selector in self._variables:
+                    if name in VARIABLE_REPLACE_MAP:
+                        evar_path = VARIABLE_REPLACE_MAP[name]
+                    elif selector.path in QUERY_REPLACE_MAP:
+                        evar_path = QUERY_REPLACE_MAP[selector.path]
+                    else:
+                        evar_path = selector.path
+
+                    tt = time()
+                    ovar_val = selector.select(xml, item=context_node, variables=ovars)
+                    times["var_old"] += time() - tt
+                    ovars[name] = ovar_val
+
+                    try:
+                        tt = time()
+                        evar_val = context_node.xpath(evar_path, namespaces=self.namespaces, **evars)
+                        times["var_meta"] += time() - tt
+                        if isinstance(evar_val, list) and len(evar_val) == 1:
+                            evar_val = evar_val[0]
+                        evars[name] = evar_val
+                        if evar_val != ovar_val:
+                            if isinstance(ovar_val, Decimal) and float(ovar_val) == evar_val:
+                                continue
+                            raise Exception("wrong result for rule variable")
+                    except Exception as e:
+                        print(f"getting assert {name} var failed", e)
+                        print(evar_path)
+                        to_handle_map[name] = selector.path
+                        ipdb.set_trace()
+
+            # evars = ovars.copy()  # TODO: evars independence... achieved?
+            # for k, v in evars.items():
+            #     if isinstance(v, list) and not isinstance(v[0], _Element):
+            #         # xpath variables only accepts strings. For list variables, use space-separated values
+            #         evars[k] = " ".join(v)
 
             gxml = context_node
             gvars = evars
@@ -646,7 +689,7 @@ class ElementRule(Element):
                     print(test_str)
                     print("xpath failed!", e)
                     ipdb.set_trace()
-                    to_handle_map[assert_id] = ""
+                    # to_handle_map[assert_id] = ""
 
         return warning, fatal
 
@@ -671,7 +714,11 @@ def run_schematron(name: str):
         pprint(warning)
         print("Fatal:")
         pprint(fatal)
-        print(sum(times.values()))
+        print(
+            sum(times.values()),
+            sum(v for k, v in times.items() if "_old" in k),
+            sum(v for k, v in times.items() if "_meta" in k),
+        )
         times = {k: 0.0 for k in times}  # reset times for the next schematron
 
 
