@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from time import time
-from typing import Generic, List, Optional, Tuple, TypeVar
+from typing import Any, Generic, List, Optional, Tuple, TypeVar
 
 import elementpath
 import ipdb
@@ -48,12 +48,58 @@ gnsmap = {}
 gvars = {}
 
 
-# Helper Methods
+# Debugging Methods
 
 
 def cdbg(path: str, **kwargs):
-    # Just for debugging, remove when done
+    # For quick debugging
     return gxml.xpath(path, namespaces=gnsmap, **gvars, **kwargs)
+
+
+def try_xpath(
+    xml: _Element,
+    path: str,
+    namespaces: dict,
+    vars: dict,
+    expected_val: Any,
+    times_name: str,
+    to_handle_key: Optional[str] = None,
+    as_list: bool = False,
+):
+    global times
+    calc_val = False
+    try:
+        tt = time()
+        val = xml.xpath(path, namespaces=namespaces, **vars)
+        times[times_name] += time() - tt
+        calc_val = val
+        if val != expected_val:
+            if isinstance(expected_val, list) and len(expected_val) == 1 and expected_val[0] == val:
+                pass
+            elif isinstance(expected_val, Decimal) and isinstance(val, float) and float(expected_val) == val:
+                pass
+            else:
+                raise Exception("xpath succeeded but wrong result")
+
+        if as_list:
+            return val
+        else:
+            return val[0] if isinstance(val, list) and len(val) == 1 else val
+    except Exception as e:
+        print(f"Error when running {times_name}")
+        print(f"Exception: {e}")
+        print(path)
+        if calc_val is not False:
+            print(calc_val)
+        if to_handle_key:
+            to_handle_map[to_handle_key] = path
+        else:
+            to_handle_map[path] = ""
+        ipdb.set_trace()
+        return False
+
+
+# Helper Methods
 
 
 def _xpath_clean_value(value):
@@ -429,32 +475,15 @@ class Element(Generic[T]):
             gid = name
             tt = time()
             ovar_val = selector.select(xml, variables=ovars)
-            if isinstance(ovar_val, list) and len(ovar_val) == 1:
-                ovar_val = ovar_val[0]
-            # ovars.update({name: ovar_val})
             ovars[name] = ovar_val
             times["evar_old"] += time() - tt
 
             if name in VARIABLE_TO_IGNORE:
                 continue
-            elif name in VARIABLE_REPLACE_MAP:
-                path_str = VARIABLE_REPLACE_MAP[name]
-            else:
-                path_str = selector.path
-            try:
-                tt = time()
-                var_val = xml.xpath(path_str, namespaces=self.namespaces, **evars)
-                if isinstance(var_val, list) and len(var_val) == 1:
-                    var_val = var_val[0]
-                evars[name] = var_val
-                times["evar_meta"] += time() - tt
-                if var_val != ovar_val:
-                    raise Exception("wrong variable value!!")
-            except Exception as e:
-                print(f"evars get {name} var failed!:", e)
-                print(path_str)
-                to_handle_map[name] = path_str
-                ipdb.set_trace()
+
+            path_str = VARIABLE_REPLACE_MAP.get(name, selector.path)
+            var_val = try_xpath(xml, path_str, self.namespaces, evars, ovar_val, "evar_meta", name)
+            evars[name] = var_val
 
         warning, fatal = [], []
         for child in self.children:
@@ -582,23 +611,10 @@ class ElementRule(Element):
         tt = time()
         context_nodes = self.context_selector.select(xml, variables=ovars_dict)
         times["ctxn_old"] += time() - tt
-
-        try:
-            tt = time()
-            meta_nodes = xml.xpath(self.context_path, namespaces=self.namespaces, **evars_dict)
-            times["ctxn_meta"] += time() - tt
-            if meta_nodes != context_nodes:
-                raise Exception("success but wrong result!")
-        except Exception as e:
-            print("meta nodes failed!", e)
-            # print(self.context_selector.path)
-            print(self.context_path)
-            to_handle_map[self.context_path] = ""
-            ipdb.set_trace()
-
+        meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", as_list=True)
         warning, fatal = [], []
 
-        for context_node in context_nodes:
+        for context_node in meta_nodes:
             # If the rule has additional variable, we evaluate them here.
             ovars = ovars_dict.copy()
             evars = evars_dict.copy()
@@ -617,22 +633,25 @@ class ElementRule(Element):
                     times["var_old"] += time() - tt
                     ovars[name] = ovar_val
 
-                    try:
-                        tt = time()
-                        evar_val = context_node.xpath(evar_path, namespaces=self.namespaces, **evars)
-                        times["var_meta"] += time() - tt
-                        if isinstance(evar_val, list) and len(evar_val) == 1:
-                            evar_val = evar_val[0]
-                        evars[name] = evar_val
-                        if evar_val != ovar_val:
-                            if isinstance(ovar_val, Decimal) and float(ovar_val) == evar_val:
-                                continue
-                            raise Exception("wrong result for rule variable")
-                    except Exception as e:
-                        print(f"getting assert {name} var failed", e)
-                        print(evar_path)
-                        to_handle_map[name] = selector.path
-                        ipdb.set_trace()
+                    evar_val = try_xpath(context_node, evar_path, self.namespaces, evars, ovar_val, "var_meta", name)
+                    evars[name] = evar_val
+
+                    # try:
+                    #     tt = time()
+                    #     evar_val = context_node.xpath(evar_path, namespaces=self.namespaces, **evars)
+                    #     times["var_meta"] += time() - tt
+                    #     if isinstance(evar_val, list) and len(evar_val) == 1:
+                    #         evar_val = evar_val[0]
+                    #     evars[name] = evar_val
+                    #     if evar_val != ovar_val:
+                    #         if isinstance(ovar_val, Decimal) and float(ovar_val) == evar_val:
+                    #             continue
+                    #         raise Exception("wrong result for rule variable")
+                    # except Exception as e:
+                    #     print(f"getting assert {name} var failed", e)
+                    #     print(evar_path)
+                    #     to_handle_map[name] = selector.path
+                    #     ipdb.set_trace()
 
             # evars = ovars.copy()  # TODO: evars independence... achieved?
             # for k, v in evars.items():
@@ -653,43 +672,48 @@ class ElementRule(Element):
                     test_str = ASSERT_REPLACE_MAP[assert_id]
                 else:
                     test_str = selector.path
-
                     if "matches" in test_str:
                         test_str = re.sub(r"matches", "re:match", test_str)
-
                     if "exists" in test_str:
                         test_str = re.sub(r"exists", "u:exists", test_str)
-
                     if "xs:decimal" in test_str:
                         test_str = re.sub(r"xs:decimal", "number", test_str)
 
-                try:
-                    tt = time()
-                    cres = context_node.xpath(test_str, namespaces=self.namespaces, **evars)
-                    times["assert_meta"] += time() - tt
-                    if cres == expected:
-                        pass
-                    else:
-                        res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
-                        if res == expected:
-                            print("!!!")
-                            print("!!! xpath succeeded only by using root node", assert_id)
-                            print("!!!")
-                        raise Exception("xpath succeeded but wrong result!")
+                # try:
+                #     tt = time()
+                #     cres = context_node.xpath(test_str, namespaces=self.namespaces, **evars)
+                #     times["assert_meta"] += time() - tt
+                #     if cres == expected:
+                #         pass
+                #     else:
+                #         res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
+                #         if res == expected:
+                #             print("!!!")
+                #             print("!!! xpath succeeded only by using root node", assert_id)
+                #             print("!!!")
+                #         raise Exception("xpath succeeded but wrong result!")
+                #
+                #     if not cres:
+                #         assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
+                #         if flag == "warning":
+                #             warning.append(assert_message)
+                #         elif flag == "fatal":
+                #             fatal.append(assert_message)
+                #
+                # except Exception as e:
+                #     print(assert_id)
+                #     print(test_str)
+                #     print("xpath failed!", e)
+                #     ipdb.set_trace()
+                #     # to_handle_map[assert_id] = ""
 
-                    if not cres:
-                        assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
-                        if flag == "warning":
-                            warning.append(assert_message)
-                        elif flag == "fatal":
-                            fatal.append(assert_message)
-
-                except Exception as e:
-                    print(assert_id)
-                    print(test_str)
-                    print("xpath failed!", e)
-                    ipdb.set_trace()
-                    # to_handle_map[assert_id] = ""
+                res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id)
+                if not res:
+                    assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
+                    if flag == "warning":
+                        warning.append(assert_message)
+                    elif flag == "fatal":
+                        fatal.append(assert_message)
 
         return warning, fatal
 
