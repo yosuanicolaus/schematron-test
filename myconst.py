@@ -194,6 +194,7 @@ VARIABLE_REPLACE_MAP = {
 
 # Map of xpath2 query -> xpath1 query
 # Only used for context queries and duplicate variable names with different queries
+# To make it consistent, all to-be-translated query must be stripped and any multiple whiespaces must be replaced with a single whitespace
 QUERY_REPLACE_MAP = {
     # CEN SCH Contexts
     # "//cac:PartyTaxScheme[cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": "",
@@ -274,16 +275,16 @@ QUERY_REPLACE_MAP = {
         cbc:ID = 'S'
     ]
     """,
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-G']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-G']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-O']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-O']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-IC']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-IC']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-AE']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-AE']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-D']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-D']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-F']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-F']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-I']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-I']",
-    "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-J']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-J']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-G']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-G']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-O']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-O']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-IC']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-IC']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-AE']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-AE']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-D']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-D']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-F']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-F']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-I']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-I']",
+    # "//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-J']": "//cac:TaxCategory[u:upper_case(cbc:TaxExemptionReasonCode)='VATEX-EU-J']",
     # Rule variables
-    # "quantity"
+    # "quantity" (from "cac:InvoiceLine | cac:CreditNoteLine")
     "if (/ubl-invoice:Invoice) then (if (cbc:InvoicedQuantity) then xs:decimal(cbc:InvoicedQuantity) else 1) else (if (cbc:CreditedQuantity) then xs:decimal(cbc:CreditedQuantity) else 1)": """
         u:if_else(
             /ubl-invoice:Invoice,
@@ -291,6 +292,7 @@ QUERY_REPLACE_MAP = {
             u:if_else(cbc:CreditedQuantity, number(cbc:CreditedQuantity), 1)
         )
     """,
+    # "quantity" (from "cac:Price/cbc:BaseQuantity[@unitCode]")
 }
 
 
@@ -1172,4 +1174,17 @@ ASSERT_REPLACE_MAP = {
     "PEPPOL-EN16931-P0100": "$profile != '01' or contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
     "PEPPOL-EN16931-CL008": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
     "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:call_elementpath(\"'%s' castable as xs:date\", string(.))",
+    # EUSR
+    "SCH-EUSR-03": "$empty or u:max(eusr:Subset/eusr:SendingEndUsers) <= number(eusr:FullSet/eusr:SendingEndUsers)",
+    "SCH-EUSR-04": "$empty or u:max(eusr:Subset/eusr:ReceivingEndUsers) <= number(eusr:FullSet/eusr:ReceivingEndUsers)",
+    "SCH-EUSR-22": "$empty or u:max(eusr:Subset/eusr:SendingOrReceivingEndUsers) <= number(eusr:FullSet/eusr:SendingOrReceivingEndUsers)",
+    "SCH-EUSR-40": "every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies count(eusr:Subset[normalize-space(@type) ='PerEUC'][every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies normalize-space($euc) = normalize-space($steuc)]) = 1",
+    "SCH-EUSR-33": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) <= number($VAR/eusr:SendingEndUsers + $VAR/eusr:ReceivingEndUsers)')",
+    "SCH-EUSR-34": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) >= number($VAR/eusr:SendingEndUsers)')",
+    "SCH-EUSR-35": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) >= number($VAR/eusr:ReceivingEndUsers)')",
+    "SCH-EUSR-36": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) > 0')",
+    "SCH-EUSR-16": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-EUSR-17": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    # "SCH-EUSR-18": "eusr:ReportPeriod/xs:date(eusr:EndDate) >= xs:date(eusr:ReportPeriod/eusr:StartDate)",
+    "SCH-EUSR-18": "u:compare_date(eusr:ReportPeriod/eusr:EndDate, '>=', eusr:ReportPeriod/eusr:StartDate)",
 }

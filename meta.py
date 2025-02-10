@@ -64,7 +64,7 @@ def try_xpath(
     expected_val: Any,
     times_name: str,
     to_handle_key: Optional[str] = None,
-    as_list: bool = False,
+    as_is: bool = False,
 ):
     global times
     calc_val = False
@@ -81,7 +81,7 @@ def try_xpath(
             else:
                 raise Exception("xpath succeeded but wrong result")
 
-        if as_list:
+        if as_is:
             return val
         else:
             return val[0] if isinstance(val, list) and len(val) == 1 else val
@@ -122,6 +122,24 @@ def _clean_xpath_query(path: str) -> str:
             continue
         clean_path_list.append(path[i])
     return "".join(clean_path_list).strip()
+
+
+def _prepare_xpath(path: str) -> str:
+    """
+    Replace some simple XPath 2.0 syntax with custom function
+    """
+    if "matches" in path:
+        path = re.sub(r"matches", "re:match", path)
+    if "exists" in path:
+        path = re.sub(r"exists", "u:exists", path)
+    if "xs:decimal" in path:
+        path = re.sub(r"xs:decimal", "number", path)
+    if "upper-case" in path:
+        path = re.sub(r"upper-case", "u:upper_case", path)
+    if "xs:integer" in path:
+        path = re.sub(r"xs:integer", "number", path)
+
+    return path
 
 
 # LXML XPath Methods
@@ -222,14 +240,22 @@ def xpath_u_checkSEOrgnr(_, number: str):
     return calculated_check_digit == int(check_digit)
 
 
-def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
+def xpath_u_for_every(ctx, item_list_path: str, condition_var: str, element_as_str: bool = False):
     item_list = ctx.context_node.xpath(item_list_path, namespaces=gnsmap, **gvars)
 
     for item in item_list:
-        if isinstance(item, etree._Element):
-            item = f"'{item.text}'"
-        test = re.sub(r"\$VAR", item, condition_var)
-        if not ctx.context_node.xpath(test, namespaces=gnsmap, **gvars):
+        res = ctx.context_node.xpath(condition_var, namespaces=gnsmap, **gvars, VAR=item)
+
+        # if isinstance(item, etree._Element) and element_as_str:
+        #     item = f"'{item.text}'"
+        #
+        # if isinstance(item, str):
+        #     test = re.sub(r"\$VAR", item, condition_var)
+        #     res = ctx.context_node.xpath(test, namespaces=gnsmap, **gvars)
+        # else:
+        #     res = ctx.context_node.xpath(condition_var, namespaces=gnsmap, **gvars, VAR=item)
+
+        if not res:
             return False
 
     return True
@@ -273,6 +299,20 @@ def xpath_u_abs(_, value):
     return abs(value)
 
 
+def xpath_u_int(_, value):
+    return int(value)
+
+
+def xpath_u_max(_, value):
+    num_values = []
+    if isinstance(value, list):
+        for node in value:
+            num_values.append(float(node.text))
+    elif isinstance(value, int | float):
+        return value
+    return max(num_values) if num_values else 0
+
+
 def xpath_u_tokenize_and_index(_, text, delimiter, index):
     if not text:
         return ""
@@ -281,6 +321,25 @@ def xpath_u_tokenize_and_index(_, text, delimiter, index):
         return tokens[int(index) - 1] if 0 < int(index) <= len(tokens) else ""  # Handle out-of-bounds
     except (ValueError, IndexError):
         return ""  # Handle invalid index or split errors
+
+
+def xpath_u_compare_date(_, date1: str, operator: str, date2: str):
+    """
+    param str operator: Either '<', '>', '<=', or '>='. If not any of them, this method will return False.
+    """
+    date1 = _xpath_clean_value(date1)
+    date2 = _xpath_clean_value(date2)
+    match operator:
+        case "<":
+            return date1 < date2
+        case "<=":
+            return date1 <= date2
+        case ">":
+            return date1 > date2
+        case ">=":
+            return date1 >= date2
+        case _:
+            return False
 
 
 utils_ns = etree.FunctionNamespace("utils")
@@ -309,7 +368,10 @@ utils_ns["exists"] = xpath_u_exists
 utils_ns["round"] = xpath_u_round
 utils_ns["upper_case"] = xpath_u_upper_case
 utils_ns["abs"] = xpath_u_abs
+utils_ns["int"] = xpath_u_int
+utils_ns["max"] = xpath_u_max
 utils_ns["tokenize_and_index"] = xpath_u_tokenize_and_index
+utils_ns["compare_date"] = xpath_u_compare_date
 
 
 ################################################################################
@@ -481,7 +543,7 @@ class Element(Generic[T]):
             if name in VARIABLE_TO_IGNORE:
                 continue
 
-            path_str = VARIABLE_REPLACE_MAP.get(name, selector.path)
+            path_str = VARIABLE_REPLACE_MAP.get(name, _prepare_xpath(selector.path))
             var_val = try_xpath(xml, path_str, self.namespaces, evars, ovar_val, "evar_meta", name)
             evars[name] = var_val
 
@@ -580,7 +642,7 @@ class ElementRule(Element):
         context = " | ".join(split_context)
         context = _clean_xpath_query(context)
 
-        self.context_path = QUERY_REPLACE_MAP.get(context, context)
+        self.context_path = QUERY_REPLACE_MAP.get(context, _prepare_xpath(context))
         # remove when done
         if self.context_path == "":
             self.context_path = context
@@ -611,7 +673,7 @@ class ElementRule(Element):
         tt = time()
         context_nodes = self.context_selector.select(xml, variables=ovars_dict)
         times["ctxn_old"] += time() - tt
-        meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", as_list=True)
+        meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", as_is=True)
         warning, fatal = [], []
 
         for context_node in meta_nodes:
@@ -626,7 +688,7 @@ class ElementRule(Element):
                     elif selector.path in QUERY_REPLACE_MAP:
                         evar_path = QUERY_REPLACE_MAP[selector.path]
                     else:
-                        evar_path = selector.path
+                        evar_path = _prepare_xpath(selector.path)
 
                     tt = time()
                     ovar_val = selector.select(xml, item=context_node, variables=ovars)
@@ -635,29 +697,6 @@ class ElementRule(Element):
 
                     evar_val = try_xpath(context_node, evar_path, self.namespaces, evars, ovar_val, "var_meta", name)
                     evars[name] = evar_val
-
-                    # try:
-                    #     tt = time()
-                    #     evar_val = context_node.xpath(evar_path, namespaces=self.namespaces, **evars)
-                    #     times["var_meta"] += time() - tt
-                    #     if isinstance(evar_val, list) and len(evar_val) == 1:
-                    #         evar_val = evar_val[0]
-                    #     evars[name] = evar_val
-                    #     if evar_val != ovar_val:
-                    #         if isinstance(ovar_val, Decimal) and float(ovar_val) == evar_val:
-                    #             continue
-                    #         raise Exception("wrong result for rule variable")
-                    # except Exception as e:
-                    #     print(f"getting assert {name} var failed", e)
-                    #     print(evar_path)
-                    #     to_handle_map[name] = selector.path
-                    #     ipdb.set_trace()
-
-            # evars = ovars.copy()  # TODO: evars independence... achieved?
-            # for k, v in evars.items():
-            #     if isinstance(v, list) and not isinstance(v[0], _Element):
-            #         # xpath variables only accepts strings. For list variables, use space-separated values
-            #         evars[k] = " ".join(v)
 
             gxml = context_node
             gvars = evars
@@ -671,43 +710,9 @@ class ElementRule(Element):
                 if assert_id in ASSERT_REPLACE_MAP:
                     test_str = ASSERT_REPLACE_MAP[assert_id]
                 else:
-                    test_str = selector.path
-                    if "matches" in test_str:
-                        test_str = re.sub(r"matches", "re:match", test_str)
-                    if "exists" in test_str:
-                        test_str = re.sub(r"exists", "u:exists", test_str)
-                    if "xs:decimal" in test_str:
-                        test_str = re.sub(r"xs:decimal", "number", test_str)
+                    test_str = _prepare_xpath(selector.path)
 
-                # try:
-                #     tt = time()
-                #     cres = context_node.xpath(test_str, namespaces=self.namespaces, **evars)
-                #     times["assert_meta"] += time() - tt
-                #     if cres == expected:
-                #         pass
-                #     else:
-                #         res = xml.xpath(test_str, namespaces=self.namespaces, **evars)
-                #         if res == expected:
-                #             print("!!!")
-                #             print("!!! xpath succeeded only by using root node", assert_id)
-                #             print("!!!")
-                #         raise Exception("xpath succeeded but wrong result!")
-                #
-                #     if not cres:
-                #         assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
-                #         if flag == "warning":
-                #             warning.append(assert_message)
-                #         elif flag == "fatal":
-                #             fatal.append(assert_message)
-                #
-                # except Exception as e:
-                #     print(assert_id)
-                #     print(test_str)
-                #     print("xpath failed!", e)
-                #     ipdb.set_trace()
-                #     # to_handle_map[assert_id] = ""
-
-                res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id)
+                res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id, as_is=True)
                 if not res:
                     assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
                     if flag == "warning":
