@@ -94,11 +94,6 @@ PEPPOL_CONST_GREEK_TUID = ""  # depends on cbc:IssueDate! TODO USE GREEK INVOICE
 ########
 # EUSR #
 ########
-# "SCH-EUSR-40": "every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies count(eusr:Subset[normalize-space(@type) ='PerEUC'][every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies normalize-space($euc) = normalize-space($steuc)]) = 1",
-# "SCH-EUSR-33": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) <= xs:integer($st/eusr:SendingEndUsers + $st/eusr:ReceivingEndUsers)",
-# "SCH-EUSR-34": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) >= xs:integer($st/eusr:SendingEndUsers)",
-# "SCH-EUSR-35": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) >= xs:integer($st/eusr:ReceivingEndUsers)",
-# "SCH-EUSR-36": "every $st in (eusr:Subset) satisfies xs:integer($st/eusr:SendingOrReceivingEndUsers) > 0",
 #######
 # TSR #
 #######
@@ -1178,13 +1173,25 @@ ASSERT_REPLACE_MAP = {
     "SCH-EUSR-03": "$empty or u:max(eusr:Subset/eusr:SendingEndUsers) <= number(eusr:FullSet/eusr:SendingEndUsers)",
     "SCH-EUSR-04": "$empty or u:max(eusr:Subset/eusr:ReceivingEndUsers) <= number(eusr:FullSet/eusr:ReceivingEndUsers)",
     "SCH-EUSR-22": "$empty or u:max(eusr:Subset/eusr:SendingOrReceivingEndUsers) <= number(eusr:FullSet/eusr:SendingOrReceivingEndUsers)",
-    "SCH-EUSR-40": "every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies count(eusr:Subset[normalize-space(@type) ='PerEUC'][every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']) satisfies normalize-space($euc) = normalize-space($steuc)]) = 1",
+    "SCH-EUSR-40": "u:id_SCH_EUSR_40()",
     "SCH-EUSR-33": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) <= number($VAR/eusr:SendingEndUsers + $VAR/eusr:ReceivingEndUsers)')",
     "SCH-EUSR-34": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) >= number($VAR/eusr:SendingEndUsers)')",
     "SCH-EUSR-35": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) >= number($VAR/eusr:ReceivingEndUsers)')",
     "SCH-EUSR-36": "u:for_every('eusr:Subset', 'number($VAR/eusr:SendingOrReceivingEndUsers) > 0')",
     "SCH-EUSR-16": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
     "SCH-EUSR-17": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
-    # "SCH-EUSR-18": "eusr:ReportPeriod/xs:date(eusr:EndDate) >= xs:date(eusr:ReportPeriod/eusr:StartDate)",
     "SCH-EUSR-18": "u:compare_date(eusr:ReportPeriod/eusr:EndDate, '>=', eusr:ReportPeriod/eusr:StartDate)",
+    # TSR
+    "SCH-TSR-06": """
+    u:for_every(
+        \"tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key\",
+        \"count(tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key[concat(normalize-space(@schemeID),'::',normalize-space(.)) = concat(normalize-space($VAR/@schemeID),'::',normalize-space($VAR))]) = 1\"
+    )
+    """,
+    "SCH-TSR-40": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-TSR-41": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-TSR-42": "u:compare_date(tsr:ReportPeriod/tsr:EndDate, '>=', tsr:ReportPeriod/tsr:StartDate)",
+    "SCH-TSR-19": "u:exists(re:match(normalize-space(.), $re_seatid))",
+    "SCH-TSR-28": "u:for_every(\"tsr:Key[normalize-space(@metaSchemeID) = 'SP']\", \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($VAR/@schemeID), ' '))\")",
+    "SCH-TSR-34": "u:for_every(\"tsr:Key[normalize-space(@metaSchemeID) = 'SP']\", \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($VAR/@schemeID), ''))\")",
 }

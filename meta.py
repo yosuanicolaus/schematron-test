@@ -88,6 +88,8 @@ def try_xpath(
     except Exception as e:
         print(f"Error when running {times_name}")
         print(f"Exception: {e}")
+        if as_is:
+            print(to_handle_key)
         print(path)
         if calc_val is not False:
             print(calc_val)
@@ -95,7 +97,7 @@ def try_xpath(
             to_handle_map[to_handle_key] = path
         else:
             to_handle_map[path] = ""
-        ipdb.set_trace()
+        # ipdb.set_trace()
         return False
 
 
@@ -240,23 +242,50 @@ def xpath_u_checkSEOrgnr(_, number: str):
     return calculated_check_digit == int(check_digit)
 
 
-def xpath_u_for_every(ctx, item_list_path: str, condition_var: str, element_as_str: bool = False):
+def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
     item_list = ctx.context_node.xpath(item_list_path, namespaces=gnsmap, **gvars)
 
     for item in item_list:
         res = ctx.context_node.xpath(condition_var, namespaces=gnsmap, **gvars, VAR=item)
-
-        # if isinstance(item, etree._Element) and element_as_str:
-        #     item = f"'{item.text}'"
-        #
-        # if isinstance(item, str):
-        #     test = re.sub(r"\$VAR", item, condition_var)
-        #     res = ctx.context_node.xpath(test, namespaces=gnsmap, **gvars)
-        # else:
-        #     res = ctx.context_node.xpath(condition_var, namespaces=gnsmap, **gvars, VAR=item)
-
         if not res:
             return False
+
+    return True
+
+
+def xpath_u_id_SCH_EUSR_40(ctx):
+    """
+    Handles Assert SCH-EUSR-40:
+    every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry'])
+    satisfies count(
+        eusr:Subset[normalize-space(@type) ='PerEUC'][
+            every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry'])
+            satisfies normalize-space($euc) = normalize-space($steuc)
+        ]) = 1
+    """
+    subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=gnsmap, **gvars)
+
+    if not subset_nodes:
+        return True
+
+    for subset_node in subset_nodes:
+        key_nodes = subset_node.xpath("eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']", namespaces=gnsmap, **gvars)
+        if not key_nodes:
+            continue
+
+        for key_node in key_nodes:
+            key_value = key_node.text
+            count = 0
+            other_subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=gnsmap, **gvars)
+            for other_subset_node in other_subset_nodes:
+                other_key_nodes = other_subset_node.xpath(
+                    "eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']", namespaces=gnsmap, **gvars
+                )
+                for other_key_node in other_key_nodes:
+                    if other_key_node.text == key_value:
+                        count += 1
+            if count != 1:
+                return False
 
     return True
 
@@ -323,7 +352,7 @@ def xpath_u_tokenize_and_index(_, text, delimiter, index):
         return ""  # Handle invalid index or split errors
 
 
-def xpath_u_compare_date(_, date1: str, operator: str, date2: str):
+def xpath_u_compare_date(_, date1, operator: str, date2):
     """
     param str operator: Either '<', '>', '<=', or '>='. If not any of them, this method will return False.
     """
@@ -372,6 +401,7 @@ utils_ns["int"] = xpath_u_int
 utils_ns["max"] = xpath_u_max
 utils_ns["tokenize_and_index"] = xpath_u_tokenize_and_index
 utils_ns["compare_date"] = xpath_u_compare_date
+utils_ns["id_SCH_EUSR_40"] = xpath_u_id_SCH_EUSR_40
 
 
 ################################################################################
