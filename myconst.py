@@ -75,6 +75,27 @@ PATH_ROOT_MAP = {
     SCHEMATRON_TSR_PATH: "TSR",
 }
 
+GNSMAP = {
+    "cbc": "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
+    "cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
+    "ubl": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+    "xs": "http://www.w3.org/2001/XMLSchema",
+    "ext": "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2",
+    "qdt": "urn:oasis:names:specification:ubl:schema:xsd:QualifiedDataTypes-2",
+    "udt": "urn:oasis:names:specification:ubl:schema:xsd:UnqualifiedDataTypes-2",
+    "cn": "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2",
+    "eusr": "urn:fdc:peppol:end-user-statistics-report:1.1",
+    "tsr": "urn:fdc:peppol:transaction-statistics-report:1.0",
+    "ubl-creditnote": "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2",
+    "ubl-invoice": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+    "u": "utils",
+}
+
+# All variables required inside u:for_every method
+GVARS = {
+    # "cl_spidtype": " CertSubjectCN ",
+}
+
 INVOICE_LINE_TAG = "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}InvoiceLine"
 
 PEPPOL_CONST_ISO3166 = " AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW 1A XI "
@@ -89,17 +110,8 @@ PEPPOL_CONST_EAID = " 0002 0007 0009 0037 0060 0088 0096 0097 0106 0130 0135 014
 PEPPOL_CONST_GREEK_GDT = " 1.1 1.6 2.1 2.4 5.1 5.2 "
 PEPPOL_CONST_GREEK_TUID = ""  # depends on cbc:IssueDate! TODO USE GREEK INVOICE
 
+TSR_CONST_CL_SPIDTYPE = " CertSubjectCN "
 
-# TODO next?
-########
-# EUSR #
-########
-#######
-# TSR #
-#######
-# "SCH-TSR-06": "every $key in (tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key) satisfies count(tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key[concat(normalize-space(@schemeID),'::',normalize-space(.)) = concat(normalize-space($key/@schemeID),'::',normalize-space($key))]) = 1",
-# "SCH-TSR-28": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
-# "SCH-TSR-34": "every $x in (tsr:Key[normalize-space(@metaSchemeID) = 'SP']) satisfies not(contains(normalize-space($x/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($x/@schemeID), ' '))",
 
 # TODO: replace all asserts that uses these variables
 VARIABLE_TO_IGNORE = {
@@ -1168,7 +1180,57 @@ ASSERT_REPLACE_MAP = {
     "PEPPOL-EN16931-CL007": f"contains('{PEPPOL_CONST_ISO4217}', concat(' ', @currencyID, ' '))",
     "PEPPOL-EN16931-P0100": "$profile != '01' or contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
     "PEPPOL-EN16931-CL008": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
-    "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:call_elementpath(\"'%s' castable as xs:date\", string(.))",
+    # "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:call_elementpath(\"'%s' castable as xs:date\", string(.))",
+    "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:castable(string(.), 'date')",
+    # PEPPOL TODO
+    "PEPPOL-EN16931-R040": "not(cbc:MultiplierFactorNumeric and cbc:BaseAmount) or u:slack(u:if_else(cbc:Amount, cbc:Amount, 0), (number(cbc:BaseAmount) * number(cbc:MultiplierFactorNumeric)) div 100, 0.02)",
+    "PEPPOL-EN16931-R110": "u:compare_date(text(), '>=' ,../../../cac:InvoicePeriod/cbc:StartDate)",
+    "PEPPOL-EN16931-R111": "u:compare_date(text(), '<=' ,../../../cac:InvoicePeriod/cbc:EndDate)",
+    # "NO-R-001": "cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID, 1, 2)='NO' and re:match(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID,3), '^[0-9]{9}MVA$') and u:mod11(substring(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID, 3, 9)) or not(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID, 1, 2)='NO')",
+    "NO-R-001": """
+    (
+        cac:PartyTaxScheme[
+            cac:TaxScheme and 
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID)) = 'VAT' and 
+            substring(cbc:CompanyID, 1, 2) = 'NO' and 
+            re:match(substring(cbc:CompanyID, 3), '^[0-9]{9}MVA$') and 
+            u:mod11(substring(cbc:CompanyID, 3, 9))
+        ]
+    ) or not(
+        cac:PartyTaxScheme[
+            cac:TaxScheme and 
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID)) = 'VAT' and 
+            substring(cbc:CompanyID, 1, 2) = 'NO'
+        ]
+    )
+    """,
+    # "GR-R-001-2": "string-length(normalize-space($IdSegments[1])) = 9 and u:TinVerification($IdSegments[1]) and ($IdSegments[1] = /*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 3, 9) or $IdSegments[1] = /*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 3, 9) )",
+    "GR-R-001-2": """
+    string-length(normalize-space($IdSegments[1])) = 9 and 
+    u:TinVerification($IdSegments[1]) and 
+    (
+        $IdSegments[1] = substring(string(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID), 3, 9) or 
+        $IdSegments[1] = substring(string(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID), 3, 9)
+    )
+    """,
+    "GR-R-001-5": f"string-length(normalize-space($IdSegments[4]))>0 and contains('{PEPPOL_CONST_GREEK_GDT}', concat(' ', $IdSegments[4], ' '))",
+    #
+    # "IS-R-008": "(u:exists(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']) and string-length(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']/cbc:ID) = 10 and (string(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']/cbc:ID) castable as xs:date)) or not(u:exists(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']))",
+    "IS-R-008": """
+    (
+        cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI' and string-length(cbc:ID) = 10] and 
+        u:castable(substring(string(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']/cbc:ID),1,10), 'date')
+    ) or 
+    not(
+        cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']
+    )
+    """,
+    "NL-R-003": "(contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(.) != '')",
+    "NL-R-005": "(contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(.) != '')",
+    "PEPPOL-EN16931-CL002": "some $code in $UNCL5189 satisfies normalize-space(text()) = $code",
+    "PEPPOL-EN16931-CL003": "some $code in $UNCL7161 satisfies normalize-space(text()) = $code",
+    "PEPPOL-EN16931-CL006": "some $code in $UNCL2005 satisfies normalize-space(text()) = $code",
+    "PEPPOL-EN16931-P0101": "$profile != '01' or (some $code in tokenize('381 396 81 83 532', '\\s') satisfies normalize-space(text()) = $code)",
     # EUSR
     "SCH-EUSR-03": "$empty or u:max(eusr:Subset/eusr:SendingEndUsers) <= number(eusr:FullSet/eusr:SendingEndUsers)",
     "SCH-EUSR-04": "$empty or u:max(eusr:Subset/eusr:ReceivingEndUsers) <= number(eusr:FullSet/eusr:ReceivingEndUsers)",
@@ -1192,6 +1254,6 @@ ASSERT_REPLACE_MAP = {
     "SCH-TSR-41": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
     "SCH-TSR-42": "u:compare_date(tsr:ReportPeriod/tsr:EndDate, '>=', tsr:ReportPeriod/tsr:StartDate)",
     "SCH-TSR-19": "u:exists(re:match(normalize-space(.), $re_seatid))",
-    "SCH-TSR-28": "u:for_every(\"tsr:Key[normalize-space(@metaSchemeID) = 'SP']\", \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($VAR/@schemeID), ' '))\")",
-    "SCH-TSR-34": "u:for_every(\"tsr:Key[normalize-space(@metaSchemeID) = 'SP']\", \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains($cl_spidtype, concat(' ', normalize-space($VAR/@schemeID), ''))\")",
+    "SCH-TSR-28": f"u:for_every(\"tsr:Key[normalize-space(@metaSchemeID) = 'SP']\", \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains('{TSR_CONST_CL_SPIDTYPE}', concat(' ', normalize-space($VAR/@schemeID), ' '))\")",
+    "SCH-TSR-34": f"u:for_every(\"tsr:Key[normalize-space(@metaSchemeID) = 'SP']\", \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains('{TSR_CONST_CL_SPIDTYPE}', concat(' ', normalize-space($VAR/@schemeID), ''))\")",
 }

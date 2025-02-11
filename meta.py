@@ -13,6 +13,8 @@ from saxonche import PySaxonProcessor
 
 from myconst import (
     ASSERT_REPLACE_MAP,
+    GNSMAP,
+    GVARS,
     PATH_ROOT_MAP,
     QUERY_REPLACE_MAP,
     TEST_MAP,
@@ -35,6 +37,7 @@ times: dict[str, float] = {
     "var_meta": 0.0,
     "assert_old": 0.0,
     "assert_meta": 0.0,
+    "stress": 0.0,
 }
 told = 0
 to_save_ids = []
@@ -65,6 +68,7 @@ def try_xpath(
     times_name: str,
     to_handle_key: Optional[str] = None,
     as_is: bool = False,
+    compare: bool = True,
 ):
     global times
     calc_val = False
@@ -73,7 +77,7 @@ def try_xpath(
         val = xml.xpath(path, namespaces=namespaces, **vars)
         times[times_name] += time() - tt
         calc_val = val
-        if val != expected_val:
+        if compare and val != expected_val:
             if isinstance(expected_val, list) and len(expected_val) == 1 and expected_val[0] == val:
                 pass
             elif isinstance(expected_val, Decimal) and isinstance(val, float) and float(expected_val) == val:
@@ -97,7 +101,7 @@ def try_xpath(
             to_handle_map[to_handle_key] = path
         else:
             to_handle_map[path] = ""
-        # ipdb.set_trace()
+        ipdb.set_trace()
         return False
 
 
@@ -243,14 +247,25 @@ def xpath_u_checkSEOrgnr(_, number: str):
 
 
 def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
-    item_list = ctx.context_node.xpath(item_list_path, namespaces=gnsmap, **gvars)
+    item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
 
     for item in item_list:
-        res = ctx.context_node.xpath(condition_var, namespaces=gnsmap, **gvars, VAR=item)
+        res = ctx.context_node.xpath(condition_var, namespaces=GNSMAP, **GVARS, VAR=item)
         if not res:
             return False
 
     return True
+
+
+def xpath_u_for_some(ctx, item_list_path: str, condition_var: str):
+    item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
+
+    for item in item_list:
+        res = ctx.context_node.xpath(condition_var, namespaces=GNSMAP, **GVARS, VAR=item)
+        if res:
+            return True
+
+    return False
 
 
 def xpath_u_id_SCH_EUSR_40(ctx):
@@ -263,24 +278,22 @@ def xpath_u_id_SCH_EUSR_40(ctx):
             satisfies normalize-space($euc) = normalize-space($steuc)
         ]) = 1
     """
-    subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=gnsmap, **gvars)
+    subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=GNSMAP)
 
     if not subset_nodes:
         return True
 
     for subset_node in subset_nodes:
-        key_nodes = subset_node.xpath("eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']", namespaces=gnsmap, **gvars)
+        key_nodes = subset_node.xpath("eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']", namespaces=GNSMAP)
         if not key_nodes:
             continue
 
         for key_node in key_nodes:
             key_value = key_node.text
             count = 0
-            other_subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=gnsmap, **gvars)
+            other_subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=GNSMAP)
             for other_subset_node in other_subset_nodes:
-                other_key_nodes = other_subset_node.xpath(
-                    "eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']", namespaces=gnsmap, **gvars
-                )
+                other_key_nodes = other_subset_node.xpath("eusr:Key[normalize-space(@schemeID) = 'EndUserCountry']", namespaces=GNSMAP)
                 for other_key_node in other_key_nodes:
                     if other_key_node.text == key_value:
                         count += 1
@@ -297,8 +310,8 @@ def xpath_u_if_else(_, condition, then_clause, else_clause):
         return else_clause
 
 
-def xpath_u_call_elementpath(_, template: str, value: str):
-    return elementpath.select(dummy_xml, template % value)
+def xpath_u_castable(_, value: str, cast_type: str):
+    return elementpath.select(dummy_xml, f"'{value}' castable as xs:{cast_type}")
 
 
 def xpath_u_exists(_, value):
@@ -391,8 +404,9 @@ utils_ns["checkSEOrgnr"] = xpath_u_checkSEOrgnr
 
 # custom utils
 utils_ns["for_every"] = xpath_u_for_every
+utils_ns["for_some"] = xpath_u_for_some
 utils_ns["if_else"] = xpath_u_if_else
-utils_ns["call_elementpath"] = xpath_u_call_elementpath
+utils_ns["castable"] = xpath_u_castable
 utils_ns["exists"] = xpath_u_exists
 utils_ns["round"] = xpath_u_round
 utils_ns["upper_case"] = xpath_u_upper_case
@@ -706,6 +720,28 @@ class ElementRule(Element):
         meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", as_is=True)
         warning, fatal = [], []
 
+        # BIG TODO: USE REAL GREEK INVOICE
+
+        if not meta_nodes:
+            # Here, they won't run the assert! We must do something here and do 100% assert coverage
+            # pprint(self._assertions)
+            evars = evars_dict.copy()
+            for name, selector in self._variables:
+                if name in ("IdSegments", "greekDocumentType"):
+                    # TODO! It's a LIST! if there's more than 0 value, how to pass it to LXML?
+                    evars[name] = []
+                else:
+                    evars[name] = selector.select(xml, variables=evars)
+                # print(name)
+            # for name, selector in self._variables:
+            #     evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _prepare_xpath(selector.path)))
+            # ovar_val = selector.select(xml, variables=)
+
+            for assert_id, flag, selector, message in self._assertions:
+                test_str = ASSERT_REPLACE_MAP.get(assert_id, _prepare_xpath(selector.path))
+                _ = try_xpath(dummy_xml, test_str, self.namespaces, evars, False, "stress", assert_id, as_is=True, compare=False)
+            pass
+
         for context_node in meta_nodes:
             # If the rule has additional variable, we evaluate them here.
             ovars = ovars_dict.copy()
@@ -713,12 +749,13 @@ class ElementRule(Element):
 
             if self._variables:
                 for name, selector in self._variables:
-                    if name in VARIABLE_REPLACE_MAP:
-                        evar_path = VARIABLE_REPLACE_MAP[name]
-                    elif selector.path in QUERY_REPLACE_MAP:
-                        evar_path = QUERY_REPLACE_MAP[selector.path]
-                    else:
-                        evar_path = _prepare_xpath(selector.path)
+                    evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _prepare_xpath(selector.path)))
+                    # if name in VARIABLE_REPLACE_MAP:
+                    #     evar_path = VARIABLE_REPLACE_MAP[name]
+                    # elif selector.path in QUERY_REPLACE_MAP:
+                    #     evar_path = QUERY_REPLACE_MAP[selector.path]
+                    # else:
+                    #     evar_path = _prepare_xpath(selector.path)
 
                     tt = time()
                     ovar_val = selector.select(xml, item=context_node, variables=ovars)
@@ -737,11 +774,7 @@ class ElementRule(Element):
                 expected = selector.select(xml, item=context_node, variables=ovars)
                 times["assert_old"] += time() - tt
 
-                if assert_id in ASSERT_REPLACE_MAP:
-                    test_str = ASSERT_REPLACE_MAP[assert_id]
-                else:
-                    test_str = _prepare_xpath(selector.path)
-
+                test_str = ASSERT_REPLACE_MAP.get(assert_id, _prepare_xpath(selector.path))
                 res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id, as_is=True)
                 if not res:
                     assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
@@ -773,11 +806,9 @@ def run_schematron(name: str):
         pprint(warning)
         print("Fatal:")
         pprint(fatal)
-        print(
-            sum(times.values()),
-            sum(v for k, v in times.items() if "_old" in k),
-            sum(v for k, v in times.items() if "_meta" in k),
-        )
+        print("all", sum(times.values()))
+        print("old", sum(v for k, v in times.items() if "_old" in k))
+        print("new", sum(v for k, v in times.items() if "_meta" in k))
         times = {k: 0.0 for k in times}  # reset times for the next schematron
 
 
