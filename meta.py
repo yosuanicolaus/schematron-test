@@ -28,6 +28,7 @@ method = parser.method
 function = parser.function
 
 XPathList = list[_Element]
+XPathObject = bool | str | float | XPathList
 T = TypeVar("T", bound="Element")
 
 times: dict[str, float] = {
@@ -74,12 +75,12 @@ def try_xpath(
     vars: dict,
     expected_val: Any,
     times_name: str,
-    to_handle_key: Optional[str] = None,
-    as_is: bool = False,
+    to_handle_key: str,
     compare: bool = True,
 ):
-    global times, gxml, gnsmap, gvars
+    global times, gxml, gnsmap, gvars, gid
     gxml = xml
+    gid = to_handle_key
     gnsmap = namespaces
     gvars = vars
     calc_val = False
@@ -93,20 +94,20 @@ def try_xpath(
                 pass
             elif isinstance(expected_val, Decimal) and isinstance(val, float) and float(expected_val) == val:
                 pass
+            elif to_handle_key in ("IdSegments",):
+                pass
             else:
                 raise Exception("xpath succeeded but wrong result")
 
-        if as_is:
-            return val
-        else:
-            return val[0] if isinstance(val, list) and len(val) == 1 else val
+        return val
     except Exception as e:
         print(f"Error when running {times_name}")
         print(f"Exception: {e}")
         print("Key:", to_handle_key)
         print(path)
         if calc_val is not False:
-            print(calc_val)
+            print("-Expected- Value:", expected_val)
+            print("Calculated Value:", calc_val)
         if to_handle_key:
             to_handle_map[to_handle_key] = path
         else:
@@ -120,17 +121,20 @@ def try_xpath(
 ################################################################################
 
 
-def _xpath_clean_value(value):
-    if not value:
-        return ""
-    if isinstance(value, list):
-        value = value[0]
-    if isinstance(value, _Element):
-        value = value.text or ""
-    return str(value)
+def _xpath_clean_value(xpath_object: XPathObject) -> str:
+    val = ""
+    if not xpath_object:
+        return val
+
+    if isinstance(xpath_object, list):
+        val = xpath_object[0].text or ""
+    else:
+        val = xpath_object
+
+    return str(val)
 
 
-def _clean_xpath_query(path: str) -> str:
+def _xpath_normalize_query(path: str) -> str:
     """
     Strip and replace all multiple space with a single space
     """
@@ -142,7 +146,7 @@ def _clean_xpath_query(path: str) -> str:
     return "".join(clean_path_list).strip()
 
 
-def _prepare_xpath(path: str) -> str:
+def _xpath_transform_query(path: str) -> str:
     """
     Replace some simple XPath 2.0 syntax with custom function
     """
@@ -156,6 +160,8 @@ def _prepare_xpath(path: str) -> str:
         path = re.sub(r"upper-case", "u:upper_case", path)
     if "xs:integer" in path:
         path = re.sub(r"xs:integer", "number", path)
+    if "tokenize" in path:
+        path = re.sub(r"tokenize", "u:tokenize", path)
 
     return path
 
@@ -179,47 +185,45 @@ def _destructure_xpath_list(xpath_list_var: XPathList) -> list[str]:
 
 
 ################################################################################
-# LXML XPath Methods
-################################################################################
-# util functions from the peppol schematron
+# LXML XPath Utility Methods from the Schematrons
 ################################################################################
 
 
 @utils_ns("gln")
-def xpath_u_gln(_, val):
+def xpath_u_gln(_, val: str):
     weighted_sum = sum(num * (1 + (((index + 1) % 2) * 2)) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
 
 
 @utils_ns("slack")
-def xpath_u_slack(_, exp, val, slack):
+def xpath_u_slack(_, exp: float, val: float, slack: float):
     return (exp + slack) >= val and (exp - slack) <= val
 
 
 @utils_ns("mod11")
-def xpath_u_mod11(_, val):
+def xpath_u_mod11(_, val: str):
     weighted_sum = sum(num * ((index % 6) + 2) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
 
 
 @utils_ns("mod97_0208")
-def xpath_u_mod97_0208(_, val):
+def xpath_u_mod97_0208(_, val: str):
     val = val[2:]
     return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
 
 
 @utils_ns("checkCodiceIPA")
-def xpath_u_checkCodiceIPA(_, val):
+def xpath_u_checkCodiceIPA(_, val: str):
     return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
 
 
 @utils_ns("checkCF16")
-def xpath_u_checkCF16(_, val):
+def xpath_u_checkCF16(_, val: str):
     return bool(re.fullmatch(r"[a-zA-Z]{6}\d{2}[a-zA-Z]\d{2}[a-zA-Z\d]{3}\d[a-zA-Z]", val))
 
 
 @utils_ns("checkCF")
-def xpath_u_checkCF(_, val):
+def xpath_u_checkCF(_, val: str):
     if len(val) == 16:
         return xpath_u_checkCF16(_, val)
     elif len(val) == 11:
@@ -227,7 +231,7 @@ def xpath_u_checkCF(_, val):
     return False
 
 
-def _xpath_u_addPIVA(arg, pari):
+def _xpath_u_addPIVA(arg: str, pari: bool):
     # Because of the way the xpath substr function works, the base case is arg as an empty string
     # pari is used to alterate, such that the CHECK_NO ("0246813579") is indexed every other character
     if not arg.isnumeric():
@@ -240,19 +244,19 @@ def _xpath_u_addPIVA(arg, pari):
 
 
 @utils_ns("checkPIVA")
-def xpath_u_checkPIVA(_, val):
-    if not val.isnumeric:
+def xpath_u_checkPIVA(_, val: str):
+    if not val.isnumeric():
         return 1
     return _xpath_u_addPIVA(val, False) % 10
 
 
 @utils_ns("addPIVA")
-def xpath_u_addPIVA(_, arg, pari):
-    return _xpath_u_addPIVA(arg, pari)
+def xpath_u_addPIVA(_, arg: str, pari: int):
+    return _xpath_u_addPIVA(arg, bool(pari))
 
 
 @utils_ns("checkPIVAseIT")
-def xpath_u_checkPIVAseIT(_, val):
+def xpath_u_checkPIVAseIT(_, val: str):
     if val[:2].upper() != "IT" or len(val) != 13:
         return False
     else:
@@ -267,7 +271,9 @@ def xpath_u_abn(_, val: str):
 
 
 @utils_ns("TinVerification")
-def xpath_u_TinVerification(_, val: str):
+def xpath_u_TinVerification(_, val: XPathObject):
+    val = _xpath_clean_value(val)
+    val = "".join([ch for ch in val if ch.isnumeric()])
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
@@ -294,12 +300,13 @@ def xpath_u_checkSEOrgnr(_, number: str):
 
 
 ################################################################################
-# custom utils
+# LXML XPath Custom Utility Methods
 ################################################################################
 
 
 @utils_ns("for_every")
 def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
+    # ipdb.set_trace()
     item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
 
     for item in item_list:
@@ -377,10 +384,9 @@ def xpath_u_exists(_, value):
 
 
 @utils_ns("round")
-def xpath_u_round(_, value, precision):
+def xpath_u_round(_, value: float, precision: float):
     if not value:
         return 0
-    value = float(_xpath_clean_value(value))
     return round(value, int(precision))
 
 
@@ -449,8 +455,17 @@ def xpath_u_compare_date(_, date1, operator: str, date2):
             return False
 
 
+@utils_ns("tokenize")
+def xpath_u_tokenize(_, value, delimiter: str):
+    # ipdb.set_trace()
+    str_value = _xpath_clean_value(value)
+    if not str_value:
+        return []
+    return _make_xpath_list(str_value.split(delimiter))
+
+
 ################################################################################
-# Parser Functions
+# Elementpath Parser Functions (to be removed once done)
 ################################################################################
 
 
@@ -554,6 +569,7 @@ def evaluate_abn_function(self, context=None):
 @method(function("TinVerification", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
 def evaluate_TinVerification_function(self, context=None):
     val = self.get_argument(context, default="", cls=str)
+    val = "".join([ch for ch in val if ch.isnumeric()])
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
@@ -581,6 +597,11 @@ def evaluate_checkSEOrgnr_function(self, context=None):
     return calculated_check_digit == int(check_digit)
 
 
+################################################################################
+# Main Logic
+################################################################################
+
+
 class Element(Generic[T]):
     def __init__(self, namespaces: dict[str, str], parent: Optional["Element"] = None):
         self.namespaces = namespaces
@@ -590,7 +611,7 @@ class Element(Generic[T]):
         self.root_name: Optional[str] = parent and parent.root_name
 
     def add_variable(self, name, path):
-        self._variables.append((name, elementpath.Selector(_clean_xpath_query(path), namespaces=self.namespaces, parser=parser)))
+        self._variables.append((name, elementpath.Selector(_xpath_normalize_query(path), namespaces=self.namespaces, parser=parser)))
 
     @property
     def variables(self):
@@ -604,12 +625,8 @@ class Element(Generic[T]):
         global times, gxml, gvars, gnsmap, gid
         ovars = ovars_dict and ovars_dict.copy() or {}
         evars = evars_dict and evars_dict.copy() or {}
-        gvars = evars
-        gnsmap = self.namespaces
-        gxml = xml
 
         for name, selector in self._variables:
-            gid = name
             tt = time()
             ovar_val = selector.select(xml, variables=ovars)
             ovars[name] = ovar_val
@@ -618,7 +635,7 @@ class Element(Generic[T]):
             if name in VARIABLE_TO_IGNORE:
                 continue
 
-            path_str = VARIABLE_REPLACE_MAP.get(name, _prepare_xpath(selector.path))
+            path_str = VARIABLE_REPLACE_MAP.get(name, _xpath_transform_query(selector.path))
             var_val = try_xpath(xml, path_str, self.namespaces, evars, ovar_val, "evar_meta", name)
             evars[name] = var_val
 
@@ -715,13 +732,13 @@ class ElementRule(Element):
             if not or_context.startswith("/"):
                 split_context[i] = f"//{or_context}"
         context = " | ".join(split_context)
-        context = _clean_xpath_query(context)
+        context = _xpath_normalize_query(context)
 
-        self.context_path = QUERY_REPLACE_MAP.get(context, _prepare_xpath(context))
+        self.context_path = QUERY_REPLACE_MAP.get(context, _xpath_transform_query(context))
         # remove when done
         if self.context_path == "":
             self.context_path = context
-        self.context_selector = elementpath.Selector(_clean_xpath_query(context), namespaces=self.namespaces, parser=parser)
+        self.context_selector = elementpath.Selector(_xpath_normalize_query(context), namespaces=self.namespaces, parser=parser)
 
         # List of 4 element tuples, consisting of assert_id, flag, test (selector), message
         self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
@@ -729,7 +746,7 @@ class ElementRule(Element):
 
     def add_assert(self, assert_id: str, flag: str, test: str, message: str):
         # Before appending, "clean" the test first
-        test = _clean_xpath_query(test)
+        test = _xpath_normalize_query(test)
         test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
         self._assertions.append((assert_id, flag, test_selector, message))
 
@@ -748,31 +765,18 @@ class ElementRule(Element):
         tt = time()
         context_nodes = self.context_selector.select(xml, variables=ovars_dict)
         times["ctxn_old"] += time() - tt
-        meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", as_is=True)
+        meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", "")
         warning, fatal = [], []
 
-        # BIG TODO: USE REAL GREEK INVOICE
-
         if stress_mode == "STRESS" and not meta_nodes:
-            # Here, they won't run the assert! We must do something here and do 100% assert coverage
-            # pprint(self._assertions)
+            # Here, they won't run the assert! To have 100% assert coverage we must run all of them
             evars = evars_dict.copy()
             for name, selector in self._variables:
-                if name in ("IdSegments", "greekDocumentType"):
-                    # TODO! It's a LIST! if there's more than 0 value, how to pass it to LXML?
-                    evars[name] = []
-                else:
-                    evars[name] = selector.select(xml, variables=evars)
-                # print(name)
-            # for name, selector in self._variables:
-            #     evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _prepare_xpath(selector.path)))
-            # ovar_val = selector.select(xml, variables=)
+                evars[name] = selector.select(xml, variables=evars)
 
             for assert_id, flag, selector, message in self._assertions:
-                test_str = ASSERT_REPLACE_MAP.get(assert_id, _prepare_xpath(selector.path))
-                _ = try_xpath(dummy_xml, test_str, self.namespaces, evars, False, "stress", assert_id, as_is=True, compare=False)
-                if "IdSegments" in evars:
-                    ipdb.set_trace()
+                test_str = ASSERT_REPLACE_MAP.get(assert_id, _xpath_transform_query(selector.path))
+                _ = try_xpath(dummy_xml, test_str, self.namespaces, evars, False, "stress", assert_id, compare=False)
             pass
 
         for context_node in meta_nodes:
@@ -782,24 +786,18 @@ class ElementRule(Element):
 
             if self._variables:
                 for name, selector in self._variables:
-                    evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _prepare_xpath(selector.path)))
-                    # if name in VARIABLE_REPLACE_MAP:
-                    #     evar_path = VARIABLE_REPLACE_MAP[name]
-                    # elif selector.path in QUERY_REPLACE_MAP:
-                    #     evar_path = QUERY_REPLACE_MAP[selector.path]
-                    # else:
-                    #     evar_path = _prepare_xpath(selector.path)
+                    evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _xpath_transform_query(selector.path)))
 
                     tt = time()
                     ovar_val = selector.select(xml, item=context_node, variables=ovars)
                     times["var_old"] += time() - tt
                     ovars[name] = ovar_val
+                    if isinstance(ovar_val, list) and len(ovar_val) > 1:
+                        print("ovar_val is a list!")
+                        ipdb.set_trace()
 
                     evar_val = try_xpath(context_node, evar_path, self.namespaces, evars, ovar_val, "var_meta", name)
                     evars[name] = evar_val
-
-            gxml = context_node
-            gvars = evars
 
             for assert_id, flag, selector, message in self._assertions:
                 gid = assert_id
@@ -807,8 +805,8 @@ class ElementRule(Element):
                 expected = selector.select(xml, item=context_node, variables=ovars)
                 times["assert_old"] += time() - tt
 
-                test_str = ASSERT_REPLACE_MAP.get(assert_id, _prepare_xpath(selector.path))
-                res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id, as_is=True)
+                test_str = ASSERT_REPLACE_MAP.get(assert_id, _xpath_transform_query(selector.path))
+                res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id)
                 if not res:
                     assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
                     if flag == "warning":
@@ -817,6 +815,11 @@ class ElementRule(Element):
                         fatal.append(assert_message)
 
         return warning, fatal
+
+
+################################################################################
+# Script Logic (not to copy to odoo)
+################################################################################
 
 
 def run_schematron(name: str):
