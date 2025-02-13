@@ -8,6 +8,7 @@ SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-repor
 TEST_INVOICE_PATH = "test_files/invoice.xml"
 TEST_INVOICE100_PATH = "test_files/invoice100.xml"
 TEST_NLCIUS_PATH = "test_files/nlcius.xml"
+TEST_GREECE_PATH = "test_files/greece.xml"
 TEST_EUSR_PATH = "test_files/eusr.xml"
 TEST_TSR_PATH = "test_files/tsr.xml"
 
@@ -53,6 +54,10 @@ TEST_MAP: dict[str, TestMapValue] = {
     "justpeppol100": {
         "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
         "test_file_path": TEST_INVOICE100_PATH,
+    },
+    "justgreece": {
+        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
+        "test_file_path": TEST_GREECE_PATH,
     },
     "all": {
         "schematron_paths": (

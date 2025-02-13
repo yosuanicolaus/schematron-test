@@ -26,6 +26,8 @@ parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})
 method = parser.method
 function = parser.function
+
+XPathList = list[_Element]
 T = TypeVar("T", bound="Element")
 
 times: dict[str, float] = {
@@ -49,9 +51,15 @@ gid = ""
 gxml = dummy_xml
 gnsmap = {}
 gvars = {}
+stress_mode = ""
+
+utils_ns = etree.FunctionNamespace("utils")
+utils_ns.prefix = "u"
 
 
+################################################################################
 # Debugging Methods
+################################################################################
 
 
 def cdbg(path: str, **kwargs):
@@ -70,7 +78,10 @@ def try_xpath(
     as_is: bool = False,
     compare: bool = True,
 ):
-    global times
+    global times, gxml, gnsmap, gvars
+    gxml = xml
+    gnsmap = namespaces
+    gvars = vars
     calc_val = False
     try:
         tt = time()
@@ -92,8 +103,7 @@ def try_xpath(
     except Exception as e:
         print(f"Error when running {times_name}")
         print(f"Exception: {e}")
-        if as_is:
-            print(to_handle_key)
+        print("Key:", to_handle_key)
         print(path)
         if calc_val is not False:
             print(calc_val)
@@ -105,7 +115,9 @@ def try_xpath(
         return False
 
 
+################################################################################
 # Helper Methods
+################################################################################
 
 
 def _xpath_clean_value(value):
@@ -148,36 +160,65 @@ def _prepare_xpath(path: str) -> str:
     return path
 
 
+def _make_xpath_list(list_var: list[str]) -> XPathList:
+    """
+    Create a list of lxml.etree._Element object so that it can be passed
+    by lxml in custom functions, and be destructured into a normal `list[str]` variable.
+    All of the string values will be stored inside the _Element object's `text`.
+    """
+    elements = []
+    for var in list_var:
+        element = etree.Element("t")
+        element.text = var
+        elements.append(element)
+    return elements
+
+
+def _destructure_xpath_list(xpath_list_var: XPathList) -> list[str]:
+    return [(t.text or "") for t in xpath_list_var]
+
+
+################################################################################
 # LXML XPath Methods
+################################################################################
+# util functions from the peppol schematron
+################################################################################
 
 
+@utils_ns("gln")
 def xpath_u_gln(_, val):
     weighted_sum = sum(num * (1 + (((index + 1) % 2) * 2)) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
 
 
+@utils_ns("slack")
 def xpath_u_slack(_, exp, val, slack):
     return (exp + slack) >= val and (exp - slack) <= val
 
 
+@utils_ns("mod11")
 def xpath_u_mod11(_, val):
     weighted_sum = sum(num * ((index % 6) + 2) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
     return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
 
 
+@utils_ns("mod97_0208")
 def xpath_u_mod97_0208(_, val):
     val = val[2:]
     return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
 
 
+@utils_ns("checkCodiceIPA")
 def xpath_u_checkCodiceIPA(_, val):
     return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
 
 
+@utils_ns("checkCF16")
 def xpath_u_checkCF16(_, val):
     return bool(re.fullmatch(r"[a-zA-Z]{6}\d{2}[a-zA-Z]\d{2}[a-zA-Z\d]{3}\d[a-zA-Z]", val))
 
 
+@utils_ns("checkCF")
 def xpath_u_checkCF(_, val):
     if len(val) == 16:
         return xpath_u_checkCF16(_, val)
@@ -198,16 +239,19 @@ def _xpath_u_addPIVA(arg, pari):
             return int(arg[0]) + _xpath_u_addPIVA(arg[1:], not pari)
 
 
+@utils_ns("checkPIVA")
 def xpath_u_checkPIVA(_, val):
     if not val.isnumeric:
         return 1
     return _xpath_u_addPIVA(val, False) % 10
 
 
+@utils_ns("addPIVA")
 def xpath_u_addPIVA(_, arg, pari):
     return _xpath_u_addPIVA(arg, pari)
 
 
+@utils_ns("checkPIVAseIT")
 def xpath_u_checkPIVAseIT(_, val):
     if val[:2].upper() != "IT" or len(val) != 13:
         return False
@@ -215,16 +259,19 @@ def xpath_u_checkPIVAseIT(_, val):
         return bool(_xpath_u_addPIVA(val[2:], False) % 10 == 0)
 
 
+@utils_ns("abn")
 def xpath_u_abn(_, val: str):
     subtractors = [49] + [48] * 10
     multipliers = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
     return bool(sum((ord(character) - subtractors[index]) * multipliers[index] for index, character in enumerate(val)) % 89 == 0)
 
 
+@utils_ns("TinVerification")
 def xpath_u_TinVerification(_, val: str):
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
 
 
+@utils_ns("checkSEOrgnr")
 def xpath_u_checkSEOrgnr(_, number: str):
     if not re.match(r"^\d+$", number):
         return False  # Not all digits
@@ -246,6 +293,12 @@ def xpath_u_checkSEOrgnr(_, number: str):
     return calculated_check_digit == int(check_digit)
 
 
+################################################################################
+# custom utils
+################################################################################
+
+
+@utils_ns("for_every")
 def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
     item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
 
@@ -257,6 +310,7 @@ def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
     return True
 
 
+@utils_ns("for_some")
 def xpath_u_for_some(ctx, item_list_path: str, condition_var: str):
     item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
 
@@ -268,6 +322,7 @@ def xpath_u_for_some(ctx, item_list_path: str, condition_var: str):
     return False
 
 
+@utils_ns("id_SCH_EUSR_40")
 def xpath_u_id_SCH_EUSR_40(ctx):
     """
     Handles Assert SCH-EUSR-40:
@@ -303,6 +358,7 @@ def xpath_u_id_SCH_EUSR_40(ctx):
     return True
 
 
+@utils_ns("if_else")
 def xpath_u_if_else(_, condition, then_clause, else_clause):
     if condition:
         return then_clause
@@ -310,14 +366,17 @@ def xpath_u_if_else(_, condition, then_clause, else_clause):
         return else_clause
 
 
+@utils_ns("castable")
 def xpath_u_castable(_, value: str, cast_type: str):
     return elementpath.select(dummy_xml, f"'{value}' castable as xs:{cast_type}")
 
 
+@utils_ns("exists")
 def xpath_u_exists(_, value):
     return bool(value)
 
 
+@utils_ns("round")
 def xpath_u_round(_, value, precision):
     if not value:
         return 0
@@ -325,11 +384,13 @@ def xpath_u_round(_, value, precision):
     return round(value, int(precision))
 
 
+@utils_ns("upper_case")
 def xpath_u_upper_case(_, value):
     value = _xpath_clean_value(value)
     return str(value).upper()
 
 
+@utils_ns("abs")
 def xpath_u_abs(_, value):
     if not value:
         return 0
@@ -341,10 +402,12 @@ def xpath_u_abs(_, value):
     return abs(value)
 
 
+@utils_ns("int")
 def xpath_u_int(_, value):
     return int(value)
 
 
+@utils_ns("max")
 def xpath_u_max(_, value):
     num_values = []
     if isinstance(value, list):
@@ -355,6 +418,7 @@ def xpath_u_max(_, value):
     return max(num_values) if num_values else 0
 
 
+@utils_ns("tokenize_and_index")
 def xpath_u_tokenize_and_index(_, text, delimiter, index):
     if not text:
         return ""
@@ -365,6 +429,7 @@ def xpath_u_tokenize_and_index(_, text, delimiter, index):
         return ""  # Handle invalid index or split errors
 
 
+@utils_ns("compare_date")
 def xpath_u_compare_date(_, date1, operator: str, date2):
     """
     param str operator: Either '<', '>', '<=', or '>='. If not any of them, this method will return False.
@@ -382,40 +447,6 @@ def xpath_u_compare_date(_, date1, operator: str, date2):
             return date1 >= date2
         case _:
             return False
-
-
-utils_ns = etree.FunctionNamespace("utils")
-utils_ns.prefix = "u"
-
-# util functions from the peppol schematron
-utils_ns["gln"] = xpath_u_gln
-utils_ns["slack"] = xpath_u_slack
-utils_ns["mod11"] = xpath_u_mod11
-utils_ns["mod97-0208"] = xpath_u_mod97_0208
-utils_ns["checkCodiceIPA"] = xpath_u_checkCodiceIPA
-utils_ns["checkCF"] = xpath_u_checkCF
-utils_ns["checkCF16"] = xpath_u_checkCF16
-utils_ns["checkPIVA"] = xpath_u_checkPIVA
-utils_ns["addPIVA"] = xpath_u_addPIVA
-utils_ns["checkPIVAseIT"] = xpath_u_checkPIVAseIT
-utils_ns["abn"] = xpath_u_abn
-utils_ns["TinVerification"] = xpath_u_TinVerification
-utils_ns["checkSEOrgnr"] = xpath_u_checkSEOrgnr
-
-# custom utils
-utils_ns["for_every"] = xpath_u_for_every
-utils_ns["for_some"] = xpath_u_for_some
-utils_ns["if_else"] = xpath_u_if_else
-utils_ns["castable"] = xpath_u_castable
-utils_ns["exists"] = xpath_u_exists
-utils_ns["round"] = xpath_u_round
-utils_ns["upper_case"] = xpath_u_upper_case
-utils_ns["abs"] = xpath_u_abs
-utils_ns["int"] = xpath_u_int
-utils_ns["max"] = xpath_u_max
-utils_ns["tokenize_and_index"] = xpath_u_tokenize_and_index
-utils_ns["compare_date"] = xpath_u_compare_date
-utils_ns["id_SCH_EUSR_40"] = xpath_u_id_SCH_EUSR_40
 
 
 ################################################################################
@@ -722,7 +753,7 @@ class ElementRule(Element):
 
         # BIG TODO: USE REAL GREEK INVOICE
 
-        if not meta_nodes:
+        if stress_mode == "STRESS" and not meta_nodes:
             # Here, they won't run the assert! We must do something here and do 100% assert coverage
             # pprint(self._assertions)
             evars = evars_dict.copy()
@@ -740,6 +771,8 @@ class ElementRule(Element):
             for assert_id, flag, selector, message in self._assertions:
                 test_str = ASSERT_REPLACE_MAP.get(assert_id, _prepare_xpath(selector.path))
                 _ = try_xpath(dummy_xml, test_str, self.namespaces, evars, False, "stress", assert_id, as_is=True, compare=False)
+                if "IdSegments" in evars:
+                    ipdb.set_trace()
             pass
 
         for context_node in meta_nodes:
@@ -817,6 +850,10 @@ def main():
     if to_run == "saxonche":
         saxonche()
         return
+
+    if len(sys.argv) > 2:
+        global stress_mode
+        stress_mode = sys.argv[2].upper()
 
     tt = time()
     run_schematron(to_run)
