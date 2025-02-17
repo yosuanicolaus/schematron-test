@@ -139,6 +139,7 @@
     </cac:Item>
     <cac:Price>
       <cbc:PriceAmount currencyID="DKK">488.0</cbc:PriceAmount>
+      <cbc:BaseQuantity unitCode="C62">488.0</cbc:BaseQuantity>
     </cac:Price>
   </cac:InvoiceLine>
   <cac:InvoiceLine>

@@ -112,7 +112,9 @@ def try_xpath(
             to_handle_map[to_handle_key] = path
         else:
             to_handle_map[path] = ""
-        ipdb.set_trace()
+        if str(e) == "Invalid expression":
+            pass
+        # ipdb.set_trace()
         return False
 
 
@@ -162,6 +164,8 @@ def _xpath_transform_query(path: str) -> str:
         path = re.sub(r"xs:integer", "number", path)
     if "tokenize" in path:
         path = re.sub(r"tokenize", "u:tokenize", path)
+    if "string-join" in path:
+        path = re.sub(r"string-join", "u:string_join", path)
 
     return path
 
@@ -462,6 +466,11 @@ def xpath_u_tokenize(_, value, delimiter: str):
     if not str_value:
         return []
     return _make_xpath_list(str_value.split(delimiter))
+
+
+@utils_ns("string_join")
+def xpath_u_string_join(_, elements: XPathList, joiner: str):
+    return joiner.join(_destructure_xpath_list(elements))
 
 
 ################################################################################

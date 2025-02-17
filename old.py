@@ -1,3 +1,4 @@
+import re
 import sys
 from time import time
 
@@ -113,7 +114,32 @@ def evaluate_abn_function(self, context=None):
 @method(function('TinVerification', prefix='u', nargs=1, sequence_types=('xs:string', 'xs:boolean')))
 def evaluate_TinVerification_function(self, context=None):
     val = self.get_argument(context, default='', cls=str)
+    val = "".join([ch for ch in val if ch.isnumeric()])
     return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
+
+
+@method(function("checkSEOrgnr", prefix="u", nargs=1))
+def evaluate_checkSEOrgnr_function(self, context=None):
+    number = self.get_argument(context, default="", cls=str)
+
+    if not re.match(r"^\d+$", number):
+        return False  # Not all digits
+
+    main_part = number[:9]  # First 9 digits
+    check_digit = number[9:]  # Last digit
+
+    sum_digits = 0
+    for pos in range(1, 10):
+        digit = int(main_part[len(main_part) - pos])  # Get digit from right to left
+        if pos % 2 == 1:  # Odd position (from right)
+            doubled = digit * 2
+            sum_digits += (doubled % 10) + (doubled // 10)  # Sum digits of doubled value
+        else:  # Even position
+            sum_digits += digit
+
+    calculated_check_digit = (10 - sum_digits % 10) % 10
+
+    return calculated_check_digit == int(check_digit)
 
 
 class Element:
