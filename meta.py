@@ -114,7 +114,7 @@ def try_xpath(
             to_handle_map[path] = ""
         if str(e) == "Invalid expression":
             pass
-        # ipdb.set_trace()
+        ipdb.set_trace()
         return False
 
 
@@ -309,28 +309,13 @@ def xpath_u_checkSEOrgnr(_, number: str):
 
 
 @utils_ns("for_every")
-def xpath_u_for_every(ctx, item_list_path: str, condition_var: str):
-    # ipdb.set_trace()
-    item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
-
+def xpath_u_for_every(ctx, item_list: XPathList, condition_var: str):
     for item in item_list:
         res = ctx.context_node.xpath(condition_var, namespaces=GNSMAP, **GVARS, VAR=item)
         if not res:
             return False
 
     return True
-
-
-@utils_ns("for_some")
-def xpath_u_for_some(ctx, item_list_path: str, condition_var: str):
-    item_list = ctx.context_node.xpath(item_list_path, namespaces=GNSMAP, **GVARS)
-
-    for item in item_list:
-        res = ctx.context_node.xpath(condition_var, namespaces=GNSMAP, **GVARS, VAR=item)
-        if res:
-            return True
-
-    return False
 
 
 @utils_ns("id_SCH_EUSR_40")
