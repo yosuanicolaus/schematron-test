@@ -91,8 +91,6 @@ def try_xpath(
                 pass
             elif isinstance(expected_val, Decimal) and isinstance(val, float) and float(expected_val) == val:
                 pass
-            elif to_handle_key in ("IdSegments",):
-                pass
             else:
                 raise Exception("xpath succeeded but wrong result")
 
@@ -111,8 +109,8 @@ def try_xpath(
             to_handle_map[path] = ""
         if str(e) == "Invalid expression":
             pass
-        ipdb.set_trace()
-        return False
+        # ipdb.set_trace()
+        return calc_val
 
 
 ################################################################################
@@ -626,7 +624,7 @@ class Element(Generic[T]):
             if name in VARIABLE_TO_IGNORE:
                 continue
 
-            path_str = VARIABLE_REPLACE_MAP.get(name, _xpath_transform_query(selector.path))
+            path_str = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _xpath_transform_query(selector.path)))
             var_val = try_xpath(xml, path_str, self.namespaces, evars, ovar_val, "evar_meta", name)
             evars[name] = var_val
 

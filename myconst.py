@@ -9,8 +9,12 @@ TEST_INVOICE_PATH = "test_files/invoice.xml"
 TEST_INVOICE100_PATH = "test_files/invoice100.xml"
 TEST_NLCIUS_PATH = "test_files/nlcius.xml"
 TEST_GREECE_PATH = "test_files/greece.xml"
+TEST_NORWAY_PATH = "test_files/norway.xml"
+TEST_SWEDEN_PATH = "test_files/sweden.xml"
+TEST_ITALY_PATH = "test_files/italy.xml"
 TEST_EUSR_PATH = "test_files/eusr.xml"
 TEST_TSR_PATH = "test_files/tsr.xml"
+TEST_RANDOM_PATH = "test_files/random.xml"
 
 
 class TestMapValue(TypedDict):
@@ -63,6 +67,18 @@ TEST_MAP: dict[str, TestMapValue] = {
         "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
         "test_file_path": TEST_GREECE_PATH,
     },
+    "justnorway": {
+        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
+        "test_file_path": TEST_NORWAY_PATH,
+    },
+    "justsweden": {
+        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
+        "test_file_path": TEST_SWEDEN_PATH,
+    },
+    "justitaly": {
+        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
+        "test_file_path": TEST_ITALY_PATH,
+    },
     "all": {
         "schematron_paths": (
             SCHEMATRON_CEN_PATH,
@@ -82,6 +98,16 @@ TEST_MAP: dict[str, TestMapValue] = {
             SCHEMATRON_TSR_PATH,
         ),
         "test_file_path": TEST_INVOICE100_PATH,
+    },
+    "random": {
+        "schematron_paths": (
+            SCHEMATRON_CEN_PATH,
+            SCHEMATRON_PEPPOL_PATH,
+            SCHEMATRON_NLCIUS_PATH,
+            SCHEMATRON_EUSR_PATH,
+            SCHEMATRON_TSR_PATH,
+        ),
+        "test_file_path": TEST_RANDOM_PATH,
     },
 }
 
@@ -223,21 +249,6 @@ VARIABLE_REPLACE_MAP = {
             'Unknown'
         )
     """,
-    "supplierCountry": """
-        u:if_else(
-            /*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
-            u:upper_case(normalize-space(substring(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
-            u:if_else(
-                /*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
-                u:upper_case(normalize-space(substring(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
-                u:if_else(
-                    /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode,
-                    u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)),
-                    'XX'
-                )
-            )
-        )
-    """,
     "customerCountry": """
         u:if_else(
             /*/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
@@ -362,6 +373,31 @@ QUERY_REPLACE_MAP = {
             ../../cbc:InvoicedQuantity,
             ../../cbc:CreditedQuantity
         )
+    """,
+    # "supplierCountry" (from PEPPOL)
+    "if (/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2)) then upper-case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2))) else if (/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2)) then upper-case(normalize-space(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2))) else if (/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode) then upper-case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) else 'XX'": """
+        u:if_else(
+            /*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
+            u:upper_case(normalize-space(substring(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
+            u:if_else(
+                /*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2)],
+                u:upper_case(normalize-space(substring(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID[1], 1, 2))),
+                u:if_else(
+                    /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode,
+                    u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)),
+                    'XX'
+                )
+            )
+        )
+    """,
+    # "supplierCountry" (from NLCIUS)
+    "if (/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode) then upper-case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) else 'XX'": """
+        u:if_else(
+            /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode,
+            u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)),
+            'XX'
+        )
+
     """,
 }
 

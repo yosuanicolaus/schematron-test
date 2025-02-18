@@ -405,7 +405,9 @@ class Element(Generic[T]):
         self.root_name: Optional[str] = parent and parent.root_name
 
     def add_variable(self, name: str, path: str):
-        self._variables.append((name, _xpath_normalize_query(path)))
+        query = _xpath_normalize_query(path)
+        query = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(query, _xpath_transform_query(query)))
+        self._variables.append((name, query))
 
     @property
     def variables(self):
@@ -422,8 +424,7 @@ class Element(Generic[T]):
             if name in VARIABLE_TO_IGNORE:
                 continue
 
-            path_str = VARIABLE_REPLACE_MAP.get(name, _xpath_transform_query(query))
-            evars[name] = try_xpath(xml, path_str, self.namespaces, evars)
+            evars[name] = try_xpath(xml, query, self.namespaces, evars)
 
         warning, fatal = [], []
         for child in self.children:
@@ -553,8 +554,7 @@ class ElementRule(Element):
 
             if self._variables:
                 for name, query in self._variables:
-                    evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(query, _xpath_transform_query(query)))
-                    evars[name] = try_xpath(context_node, evar_path, self.namespaces, evars)
+                    evars[name] = try_xpath(context_node, query, self.namespaces, evars)
 
             for assert_id, flag, query, message in self._assertions:
                 res = try_xpath(context_node, query, self.namespaces, evars)
