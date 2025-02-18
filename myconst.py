@@ -55,6 +55,10 @@ TEST_MAP: dict[str, TestMapValue] = {
         "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
         "test_file_path": TEST_INVOICE100_PATH,
     },
+    "justcengreece": {
+        "schematron_paths": (SCHEMATRON_CEN_PATH,),
+        "test_file_path": TEST_GREECE_PATH,
+    },
     "justgreece": {
         "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
         "test_file_path": TEST_GREECE_PATH,
@@ -68,6 +72,16 @@ TEST_MAP: dict[str, TestMapValue] = {
             SCHEMATRON_TSR_PATH,
         ),
         "test_file_path": TEST_INVOICE_PATH,
+    },
+    "all100": {
+        "schematron_paths": (
+            SCHEMATRON_CEN_PATH,
+            SCHEMATRON_PEPPOL_PATH,
+            SCHEMATRON_NLCIUS_PATH,
+            SCHEMATRON_EUSR_PATH,
+            SCHEMATRON_TSR_PATH,
+        ),
+        "test_file_path": TEST_INVOICE100_PATH,
     },
 }
 
@@ -94,11 +108,7 @@ GNSMAP = {
     "ubl-creditnote": "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2",
     "ubl-invoice": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
     "u": "utils",
-}
-
-# All variables required inside u:for_every method
-GVARS = {
-    # "cl_spidtype": " CertSubjectCN ",
+    "re": "http://exslt.org/regular-expressions",
 }
 
 INVOICE_LINE_TAG = "{urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2}InvoiceLine"

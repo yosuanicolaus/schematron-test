@@ -1,8 +1,7 @@
 import re
 import sys
-from decimal import Decimal
 from time import time
-from typing import Any, Generic, List, Optional, Tuple, TypeVar
+from typing import Generic, List, Optional, Tuple, TypeVar
 
 import elementpath
 import ipdb
@@ -21,23 +20,15 @@ from myconst import (
     VARIABLE_TO_IGNORE,
 )
 
-parser = elementpath.XPath2Parser
-parser.DEFAULT_NAMESPACES.update({"u": "utils"})
-method = parser.method
-function = parser.function
-
 XPathList = list[_Element]
 XPathObject = bool | str | float | XPathList
+
 T = TypeVar("T", bound="Element")
 
 times: dict[str, float] = {
-    "evar_old": 0.0,
     "evar_meta": 0.0,
-    "ctxn_old": 0.0,
     "ctxn_meta": 0.0,
-    "var_old": 0.0,
     "var_meta": 0.0,
-    "assert_old": 0.0,
     "assert_meta": 0.0,
     "stress": 0.0,
 }
@@ -45,79 +36,25 @@ times: dict[str, float] = {
 to_handle_map: dict[str, str] = {}
 dummy_xml = etree.Element("unused")
 
-gid = ""
-gxml = dummy_xml
-gnsmap = {}
-gvars = {}
-stress_mode = ""
-
 utils_ns = etree.FunctionNamespace("utils")
 utils_ns.prefix = "u"
 
 
 ################################################################################
-# Debugging Methods
-################################################################################
-
-
-def cdbg(path: str, **kwargs):
-    # For quick debugging
-    return gxml.xpath(path, namespaces=gnsmap, **gvars, **kwargs)
-
-
-def try_xpath(
-    xml: _Element,
-    path: str,
-    namespaces: dict,
-    vars: dict,
-    expected_val: Any,
-    times_name: str,
-    to_handle_key: str,
-    compare: bool = True,
-):
-    global times, gxml, gnsmap, gvars, gid
-    gxml = xml
-    gid = to_handle_key
-    gnsmap = namespaces
-    gvars = vars
-    calc_val = False
-    try:
-        tt = time()
-        val = xml.xpath(path, namespaces=namespaces, **vars)
-        times[times_name] += time() - tt
-        calc_val = val
-        if compare and val != expected_val:
-            if isinstance(expected_val, list) and len(expected_val) == 1 and expected_val[0] == val:
-                pass
-            elif isinstance(expected_val, Decimal) and isinstance(val, float) and float(expected_val) == val:
-                pass
-            elif to_handle_key in ("IdSegments",):
-                pass
-            else:
-                raise Exception("xpath succeeded but wrong result")
-
-        return val
-    except Exception as e:
-        print(f"Error when running {times_name}")
-        print(f"Exception: {e}")
-        print("Key:", to_handle_key)
-        print(path)
-        if calc_val is not False:
-            print("-Expected- Value:", expected_val)
-            print("Calculated Value:", calc_val)
-        if to_handle_key:
-            to_handle_map[to_handle_key] = path
-        else:
-            to_handle_map[path] = ""
-        if str(e) == "Invalid expression":
-            pass
-        ipdb.set_trace()
-        return False
-
-
-################################################################################
 # Helper Methods
 ################################################################################
+
+
+def try_xpath(xml: _Element, path: str, namespaces: dict, variables: dict) -> XPathObject:
+    try:
+        val = xml.xpath(path, namespaces=namespaces, **variables)
+        # TODO: convert _XPathObject (lxml) to XPathObject (custom)
+        return val
+    except Exception as e:
+        # TODO: Log error here
+        print(f"XPath failed ({e}) on path:\n%s" % path)
+        ipdb.set_trace()
+        return False
 
 
 def _xpath_clean_value(xpath_object: XPathObject) -> str:
@@ -443,7 +380,6 @@ def xpath_u_compare_date(_, date1, operator: str, date2):
 
 @utils_ns("tokenize")
 def xpath_u_tokenize(_, value, delimiter: str):
-    # ipdb.set_trace()
     str_value = _xpath_clean_value(value)
     if not str_value:
         return []
@@ -456,139 +392,6 @@ def xpath_u_string_join(_, elements: XPathList, joiner: str):
 
 
 ################################################################################
-# Elementpath Parser Functions (to be removed once done)
-################################################################################
-
-
-@method(function("gln", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-def evaluate_gln_function(self, context=None):
-    val = self.get_argument(context, default="", cls=str)
-    weighted_sum = sum(num * (1 + (((index + 1) % 2) * 2)) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
-    return (10 - (weighted_sum % 10)) % 10 == int(val[-1])
-
-
-@method(function("slack", prefix="u", nargs=3, sequence_types=("xs:decimal", "xs:decimal", "xs:decimal", "xs:boolean")))
-def evaluate_slack_function(self, context=None):
-    exp = self.get_argument(context, default="", cls=elementpath.datatypes.Decimal)
-    val = self.get_argument(context, index=1, default="", cls=elementpath.datatypes.Decimal)
-    slack = self.get_argument(context, index=2, default="", cls=elementpath.datatypes.Decimal)
-    return (exp + slack) >= val and (exp - slack) <= val
-
-
-@method(function("mod11", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-def evaluate_mod11_function(self, context=None):
-    val = self.get_argument(context, default="", cls=str)
-    weighted_sum = sum(num * ((index % 6) + 2) for index, num in enumerate([ord(c) - 48 for c in val[:-1]][::-1]))
-    return int(val) > 0 and (11 - (weighted_sum % 11)) % 11 == int(val[-1])
-
-
-@method(function("mod97-0208", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-def evaluate_mod97_0208_function(self, context=None):
-    val = self.get_argument(context, default="", cls=str)[2:]
-    return int(val[-2:]) == 97 - (int(val[:-2]) % 97)
-
-
-@method(function("checkCodiceIPA", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-def evaluate_checkCodiceIPA_function(self, context=None):
-    val = self.get_argument(context, default="", cls=str)
-    return bool(len(val) == 6 and re.match("^[a-zA-Z0-9]+$", val))
-
-
-@method(function("checkCF", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-@method(function("checkCF16", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-def evaluate_checkCF_function(self, context=None):
-    """Check the characters of the codice fiscale to ensure it conforms to either the 16 or 11 character standards"""
-    val = self.get_argument(context, default="", cls=str)
-    if self.symbol == "checkCF16" or len(val) == 16:
-        return bool(re.fullmatch(r"[a-zA-Z]{6}\d{2}[a-zA-Z]\d{2}[a-zA-Z\d]{3}\d[a-zA-Z]", val))
-    elif len(val) == 11:
-        return val.isnumeric()
-
-    return False
-
-
-@method(function("checkPIVA", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
-@method(function("addPIVA", prefix="u", nargs=2, sequence_types=("xs:string", "xs:integer", "xs:integer")))
-@method(function("checkPIVAseIT", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
-def evaluate_checkPIVA_function(self, context=None):
-    """Recursive implementation of a version of the luhn 10 algorithm used for checking partita IVA
-
-    The checksum is valid when the resultant value mod 10 is zero
-    """
-    CHECK_NO = "0246813579"
-
-    def addPIVA(arg, pari):
-        # Because of the way the xpath substr function works, the base case is arg as an empty string
-        # pari is used to alterate, such that the CHECK_NO is indexed every other character
-        if not arg.isnumeric():
-            return 0
-        else:
-            if pari:
-                return int(CHECK_NO[int(arg[0])]) + addPIVA(arg[1:], not pari)
-            else:
-                return int(arg[0]) + addPIVA(arg[1:], not pari)
-
-    if self.symbol == "checkPIVA":
-        val = self.get_argument(context, default="", cls=str)
-        if not val.isnumeric:
-            return 1
-        return addPIVA(val, False) % 10
-
-    elif self.symbol == "addPIVA":
-        arg = self.get_argument(context, default="", cls=str)
-        pari = self.get_argument(context, index=1, default="", cls=int)
-        return addPIVA(arg, pari)
-
-    elif self.symbol == "checkPIVAseIT":
-        val = self.get_argument(context, default="", cls=str)
-        if val[:2].upper() != "IT" or len(val) != 13:
-            return False
-        else:
-            return bool(addPIVA(val[2:], False) % 10 == 0)
-
-    return False
-
-
-@method(function("abn", prefix="u", nargs=1, sequence_types=("xs:string?", "xs:boolean")))
-def evaluate_abn_function(self, context=None):
-    val = self.get_argument(context, default="", cls=str)
-    subtractors = [49] + [48] * 10
-    multipliers = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-    return bool(sum((ord(character) - subtractors[index]) * multipliers[index] for index, character in enumerate(val)) % 89 == 0)
-
-
-@method(function("TinVerification", prefix="u", nargs=1, sequence_types=("xs:string", "xs:boolean")))
-def evaluate_TinVerification_function(self, context=None):
-    val = self.get_argument(context, default="", cls=str)
-    val = "".join([ch for ch in val if ch.isnumeric()])
-    return sum(int(character) * (2 ** (index + 1)) for index, character in enumerate(val[:8][::-1])) % 11 % 10 == int(val[-1])
-
-
-@method(function("checkSEOrgnr", prefix="u", nargs=1))
-def evaluate_checkSEOrgnr_function(self, context=None):
-    number = self.get_argument(context, default="", cls=str)
-
-    if not re.match(r"^\d+$", number):
-        return False  # Not all digits
-
-    main_part = number[:9]  # First 9 digits
-    check_digit = number[9:]  # Last digit
-
-    sum_digits = 0
-    for pos in range(1, 10):
-        digit = int(main_part[len(main_part) - pos])  # Get digit from right to left
-        if pos % 2 == 1:  # Odd position (from right)
-            doubled = digit * 2
-            sum_digits += (doubled % 10) + (doubled // 10)  # Sum digits of doubled value
-        else:  # Even position
-            sum_digits += digit
-
-    calculated_check_digit = (10 - sum_digits % 10) % 10
-
-    return calculated_check_digit == int(check_digit)
-
-
-################################################################################
 # Main Logic
 ################################################################################
 
@@ -597,12 +400,12 @@ class Element(Generic[T]):
     def __init__(self, namespaces: dict[str, str], parent: Optional["Element"] = None):
         self.namespaces = namespaces
         self.children: List[T] = []
-        self._variables: List[Tuple[str, elementpath.Selector]] = []
+        self._variables: List[Tuple[str, str]] = []
         self.parent: Optional[Element] = parent
         self.root_name: Optional[str] = parent and parent.root_name
 
-    def add_variable(self, name, path):
-        self._variables.append((name, elementpath.Selector(_xpath_normalize_query(path), namespaces=self.namespaces, parser=parser)))
+    def add_variable(self, name: str, path: str):
+        self._variables.append((name, _xpath_normalize_query(path)))
 
     @property
     def variables(self):
@@ -611,28 +414,20 @@ class Element(Generic[T]):
         else:
             return self._variables
 
-    def run(self, xml: _Element, evars_dict: Optional[dict] = None, ovars_dict=None) -> Tuple[List[str], List[str]]:
+    def run(self, xml: _Element, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
-        global times, gxml, gvars, gnsmap, gid
-        ovars = ovars_dict and ovars_dict.copy() or {}
-        evars = evars_dict and evars_dict.copy() or {}
+        evars = variables_dict and variables_dict.copy() or {}
 
-        for name, selector in self._variables:
-            tt = time()
-            ovar_val = selector.select(xml, variables=ovars)
-            ovars[name] = ovar_val
-            times["evar_old"] += time() - tt
-
+        for name, query in self._variables:
             if name in VARIABLE_TO_IGNORE:
                 continue
 
-            path_str = VARIABLE_REPLACE_MAP.get(name, _xpath_transform_query(selector.path))
-            var_val = try_xpath(xml, path_str, self.namespaces, evars, ovar_val, "evar_meta", name)
-            evars[name] = var_val
+            path_str = VARIABLE_REPLACE_MAP.get(name, _xpath_transform_query(query))
+            evars[name] = try_xpath(xml, path_str, self.namespaces, evars)
 
         warning, fatal = [], []
         for child in self.children:
-            res_warning, res_fatal = child.run(xml, evars_dict=evars, ovars_dict=ovars)
+            res_warning, res_fatal = child.run(xml, variables_dict=evars)
             warning += res_warning
             fatal += res_fatal
 
@@ -662,15 +457,15 @@ class ElementSchematron(Element):
             Updates the given element object with the variables local to the particular node it corresponds to.
             """
             for var in node.findall("./let", namespaces=sch_namespace):
-                element.add_variable(var.get("name"), var.get("value"))
+                element.add_variable(var.get("name") or "", var.get("value") or "")
 
         # This is the namespace used to interpret the sch file
         sch_namespace = {"": "http://purl.oclc.org/dsdl/schematron"}
 
         # Generate the namespaces used to interpet the documents to be validated
-        namespace_dict = {}
+        namespace_dict: dict[str, str] = {"re": "http://exslt.org/regular-expressions"}
         for ns in sch.findall("./ns", namespaces=sch_namespace):
-            namespace_dict.update({ns.get("prefix"): ns.get("uri")})
+            namespace_dict.update({ns.get("prefix") or "": ns.get("uri") or ""})
 
         schematron = cls(namespaces=namespace_dict, parent=None)
         schematron.root_name = root_name
@@ -681,14 +476,14 @@ class ElementSchematron(Element):
             add_all_variable(pattern, pattern_node)
 
             for rule_node in pattern_node.findall("./rule", namespaces=sch_namespace):
-                rule = pattern.add_element_rule(rule_node.get("context"))
+                rule = pattern.add_element_rule(rule_node.get("context") or "")
                 add_all_variable(rule, rule_node)
                 for assertion in rule_node.findall("./assert", namespaces=sch_namespace):
                     rule.add_assert(
-                        assertion.get("id"),
-                        assertion.get("flag"),
-                        assertion.get("test"),
-                        assertion.text,
+                        assertion.get("id") or "",
+                        assertion.get("flag") or "",
+                        assertion.get("test") or "",
+                        assertion.text or "",
                     )
         return schematron
 
@@ -711,7 +506,6 @@ class ElementPattern(Element):
 class ElementRule(Element):
     def __init__(self, context: str, namespaces: dict, parent: ElementPattern):
         super().__init__(namespaces=namespaces, parent=parent)
-        self.children = []
 
         # The received `context` string here is in the format of a " | "-separated context items, and
         # each context item will be in the format of "OrphanedNode/AdditionalPathToNode" or "/RootNode/PathToNode".
@@ -724,24 +518,18 @@ class ElementRule(Element):
                 split_context[i] = f"//{or_context}"
         context = " | ".join(split_context)
         context = _xpath_normalize_query(context)
-
         self.context_path = QUERY_REPLACE_MAP.get(context, _xpath_transform_query(context))
-        # remove when done
-        if self.context_path == "":
-            self.context_path = context
-        self.context_selector = elementpath.Selector(_xpath_normalize_query(context), namespaces=self.namespaces, parser=parser)
 
-        # List of 4 element tuples, consisting of assert_id, flag, test (selector), message
-        self._assertions: List[Tuple[str, str, elementpath.Selector, str]] = []
-        self.namespaces.update({"re": "http://exslt.org/regular-expressions"})
+        # List of 4 element tuples, consisting of assert_id, flag, query, message
+        self._assertions: List[Tuple[str, str, str, str]] = []
+        # self.namespaces.update({"re": "http://exslt.org/regular-expressions"})
 
     def add_assert(self, assert_id: str, flag: str, test: str, message: str):
-        # Before appending, "clean" the test first
-        test = _xpath_normalize_query(test)
-        test_selector = elementpath.Selector(test, namespaces=self.namespaces, parser=parser)
-        self._assertions.append((assert_id, flag, test_selector, message))
+        query = _xpath_normalize_query(test)
+        query = ASSERT_REPLACE_MAP.get(assert_id, _xpath_transform_query(query))
+        self._assertions.append((assert_id, flag, query, message))
 
-    def run(self, xml: _Element, evars_dict: Optional[dict] = None, ovars_dict: Optional[dict] = None):
+    def run(self, xml: _Element, variables_dict: Optional[dict] = None):
         """
         This method overrides Element.run function because ElementRule is at the bottom of the Element tree,
         and it does not have any children.
@@ -749,57 +537,29 @@ class ElementRule(Element):
         Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
         strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
         """
-        global times, gnsmap, gvars, gid, gxml
-        gnsmap = self.namespaces
-        ovars_dict = ovars_dict and ovars_dict.copy() or {}
-        evars_dict = evars_dict and evars_dict.copy() or {}
-        tt = time()
-        context_nodes = self.context_selector.select(xml, variables=ovars_dict)
-        times["ctxn_old"] += time() - tt
-        meta_nodes = try_xpath(xml, self.context_path, self.namespaces, evars_dict, context_nodes, "ctxn_meta", "")
+        variables_dict = variables_dict and variables_dict.copy() or {}
+        context_nodes = try_xpath(xml, self.context_path, self.namespaces, variables_dict)
         warning, fatal = [], []
 
-        if stress_mode == "STRESS" and not meta_nodes:
-            # Here, they won't run the assert! To have 100% assert coverage we must run all of them
-            evars = evars_dict.copy()
-            for name, selector in self._variables:
-                evars[name] = selector.select(xml, variables=evars)
+        if not isinstance(context_nodes, list):
+            return warning, fatal
 
-            for assert_id, flag, selector, message in self._assertions:
-                test_str = ASSERT_REPLACE_MAP.get(assert_id, _xpath_transform_query(selector.path))
-                _ = try_xpath(dummy_xml, test_str, self.namespaces, evars, False, "stress", assert_id, compare=False)
-            pass
+        for context_node in context_nodes:
+            if not isinstance(context_node, _Element):
+                continue
 
-        for context_node in meta_nodes:
             # If the rule has additional variable, we evaluate them here.
-            ovars = ovars_dict.copy()
-            evars = evars_dict.copy()
+            evars: dict[str, XPathObject] = variables_dict.copy()
 
             if self._variables:
-                for name, selector in self._variables:
-                    evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(selector.path, _xpath_transform_query(selector.path)))
+                for name, query in self._variables:
+                    evar_path = VARIABLE_REPLACE_MAP.get(name, QUERY_REPLACE_MAP.get(query, _xpath_transform_query(query)))
+                    evars[name] = try_xpath(context_node, evar_path, self.namespaces, evars)
 
-                    tt = time()
-                    ovar_val = selector.select(xml, item=context_node, variables=ovars)
-                    times["var_old"] += time() - tt
-                    ovars[name] = ovar_val
-                    if isinstance(ovar_val, list) and len(ovar_val) > 1:
-                        print("ovar_val is a list!")
-                        ipdb.set_trace()
-
-                    evar_val = try_xpath(context_node, evar_path, self.namespaces, evars, ovar_val, "var_meta", name)
-                    evars[name] = evar_val
-
-            for assert_id, flag, selector, message in self._assertions:
-                gid = assert_id
-                tt = time()
-                expected = selector.select(xml, item=context_node, variables=ovars)
-                times["assert_old"] += time() - tt
-
-                test_str = ASSERT_REPLACE_MAP.get(assert_id, _xpath_transform_query(selector.path))
-                res = try_xpath(context_node, test_str, self.namespaces, evars, expected, "assert_meta", assert_id)
+            for assert_id, flag, query, message in self._assertions:
+                res = try_xpath(context_node, query, self.namespaces, evars)
                 if not res:
-                    assert_message = message if self.root_name == "CEN" else f"[{assert_id}] {message}"
+                    assert_message = f"[{assert_id}]-{message}" if self.root_name == "PEPPOL" else message
                     if flag == "warning":
                         warning.append(assert_message)
                     elif flag == "fatal":
@@ -814,7 +574,6 @@ class ElementRule(Element):
 
 
 def run_schematron(name: str):
-    global times
     if name not in TEST_MAP:
         raise Exception("Invalid schematron argument!")
 
@@ -827,16 +586,10 @@ def run_schematron(name: str):
         schematron = ElementSchematron.from_sch(etree.parse(schematron_path).getroot(), root_name)
         doc = etree.parse(test_file_path).getroot()
         warning, fatal = schematron.run(doc)
-        print("Times:")
-        pprint(times, expand_all=True)
         print("Warning:")
         pprint(warning)
         print("Fatal:")
         pprint(fatal)
-        print("all", sum(times.values()))
-        print("old", sum(v for k, v in times.items() if "_old" in k))
-        print("new", sum(v for k, v in times.items() if "_meta" in k))
-        times = {k: 0.0 for k in times}  # reset times for the next schematron
 
 
 def main():
