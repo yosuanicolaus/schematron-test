@@ -109,7 +109,7 @@ def try_xpath(
             to_handle_map[path] = ""
         if str(e) == "Invalid expression":
             pass
-        # ipdb.set_trace()
+        ipdb.set_trace()
         return calc_val
 
 
@@ -124,7 +124,11 @@ def _xpath_clean_value(xpath_object: XPathObject) -> str:
         return val
 
     if isinstance(xpath_object, list):
-        val = xpath_object[0].text or ""
+        val = xpath_object[0]
+        if isinstance(val, _Element):
+            return val.text or ""
+        else:
+            return str(val)
     else:
         val = xpath_object
 

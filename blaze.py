@@ -22,16 +22,7 @@ from myconst import (
 
 XPathList = list[_Element]
 XPathObject = bool | str | float | XPathList
-
 T = TypeVar("T", bound="Element")
-
-times: dict[str, float] = {
-    "evar_meta": 0.0,
-    "ctxn_meta": 0.0,
-    "var_meta": 0.0,
-    "assert_meta": 0.0,
-    "stress": 0.0,
-}
 
 to_handle_map: dict[str, str] = {}
 dummy_xml = etree.Element("unused")
@@ -39,6 +30,8 @@ dummy_xml = etree.Element("unused")
 utils_ns = etree.FunctionNamespace("utils")
 utils_ns.prefix = "u"
 
+
+# Sync everything below until just before Script Logic with `schematron_validation.py`
 
 ################################################################################
 # Helper Methods
@@ -48,12 +41,11 @@ utils_ns.prefix = "u"
 def try_xpath(xml: _Element, path: str, namespaces: dict, variables: dict) -> XPathObject:
     try:
         val = xml.xpath(path, namespaces=namespaces, **variables)
-        # TODO: convert _XPathObject (lxml) to XPathObject (custom)
+        # TODO (if needed): convert _XPathObject (lxml) to XPathObject (custom); handle other possible lxml _XPathObject types
         return val
     except Exception as e:
         # TODO: Log error here
         print(f"XPath failed ({e}) on path:\n%s" % path)
-        ipdb.set_trace()
         return False
 
 
@@ -63,7 +55,11 @@ def _xpath_clean_value(xpath_object: XPathObject) -> str:
         return val
 
     if isinstance(xpath_object, list):
-        val = xpath_object[0].text or ""
+        val = xpath_object[0]
+        if isinstance(val, _Element):
+            return val.text or ""
+        else:
+            return str(val)
     else:
         val = xpath_object
 
@@ -72,7 +68,7 @@ def _xpath_clean_value(xpath_object: XPathObject) -> str:
 
 def _xpath_normalize_query(path: str) -> str:
     """
-    Strip and replace all multiple space with a single space
+    Strip and replace all multiple spaces with a single space
     """
     clean_path_list = []
     for i in range(len(path)):
@@ -82,33 +78,33 @@ def _xpath_normalize_query(path: str) -> str:
     return "".join(clean_path_list).strip()
 
 
-def _xpath_transform_query(path: str) -> str:
+def _xpath_transform_query(query: str) -> str:
     """
-    Replace some simple XPath 2.0 syntax with custom function
+    Transform simple XPath 2.0 syntax with custom function
     """
-    if "matches" in path:
-        path = re.sub(r"matches", "re:match", path)
-    if "exists" in path:
-        path = re.sub(r"exists", "u:exists", path)
-    if "xs:decimal" in path:
-        path = re.sub(r"xs:decimal", "number", path)
-    if "upper-case" in path:
-        path = re.sub(r"upper-case", "u:upper_case", path)
-    if "xs:integer" in path:
-        path = re.sub(r"xs:integer", "number", path)
-    if "tokenize" in path:
-        path = re.sub(r"tokenize", "u:tokenize", path)
-    if "string-join" in path:
-        path = re.sub(r"string-join", "u:string_join", path)
+    if "matches" in query:
+        query = re.sub(r"matches", "re:match", query)
+    if "exists" in query:
+        query = re.sub(r"exists", "u:exists", query)
+    if "xs:decimal" in query:
+        query = re.sub(r"xs:decimal", "number", query)
+    if "upper-case" in query:
+        query = re.sub(r"upper-case", "u:upper_case", query)
+    if "xs:integer" in query:
+        query = re.sub(r"xs:integer", "number", query)
+    if "tokenize" in query:
+        query = re.sub(r"tokenize", "u:tokenize", query)
+    if "string-join" in query:
+        query = re.sub(r"string-join", "u:string_join", query)
 
-    return path
+    return query
 
 
 def _make_xpath_list(list_var: list[str]) -> XPathList:
     """
     Create a list of lxml.etree._Element object so that it can be passed
     by lxml in custom functions, and be destructured into a normal `list[str]` variable.
-    All of the string values will be stored inside the _Element object's `text`.
+    All the string values will be stored inside the _Element object's `text`.
     """
     elements = []
     for var in list_var:

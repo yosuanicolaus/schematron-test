@@ -43,6 +43,14 @@ TEST_MAP: dict[str, TestMapValue] = {
         "schematron_paths": (SCHEMATRON_TSR_PATH,),
         "test_file_path": TEST_TSR_PATH,
     },
+    "test_ubl": {
+        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH),
+        "test_file_path": "test_files/test_ubl.xml",
+    },
+    "faulty": {
+        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH),
+        "test_file_path": "test_files/faulty.xml",
+    },
     "justcen": {
         "schematron_paths": (SCHEMATRON_CEN_PATH,),
         "test_file_path": TEST_INVOICE_PATH,
@@ -120,6 +128,11 @@ PATH_ROOT_MAP = {
     SCHEMATRON_TSR_PATH: "TSR",
 }
 
+
+################################################################################
+# Sync everything from this point below with `schematron_const.py`
+################################################################################
+
 GNSMAP = {
     "cbc": "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
     "cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
@@ -147,10 +160,7 @@ PEPPOL_CONST_UNCL5189 = " 41 42 60 62 63 64 65 66 67 68 70 71 88 95 100 102 103 
 PEPPOL_CONST_UNCL7161 = " AA AAA AAC AAD AAE AAF AAH AAI AAS AAT AAV AAY AAZ ABA ABB ABC ABD ABF ABK ABL ABN ABR ABS ABT ABU ACF ACG ACH ACI ACJ ACK ACL ACM ACS ADC ADE ADJ ADK ADL ADM ADN ADO ADP ADQ ADR ADT ADW ADY ADZ AEA AEB AEC AED AEF AEH AEI AEJ AEK AEL AEM AEN AEO AEP AES AET AEU AEV AEW AEX AEY AEZ AJ AU CA CAB CAD CAE CAF CAI CAJ CAK CAL CAM CAN CAO CAP CAQ CAR CAS CAT CAU CAV CAW CAX CAY CAZ CD CG CS CT DAB DAC DAD DAF DAG DAH DAI DAJ DAK DAL DAM DAN DAO DAP DAQ DL EG EP ER FAA FAB FAC FC FH FI GAA HAA HD HH IAA IAB ID IF IR IS KO L1 LA LAA LAB LF MAE MI ML NAA OA PA PAA PC PL RAB RAC RAD RAF RE RF RH RV SA SAA SAD SAE SAI SG SH SM SU TAB TAC TT TV V1 V2 WH XAA YY ZZZ "
 PEPPOL_CONST_UNCL5305 = " AE E S Z G O K L M "
 PEPPOL_CONST_EAID = " 0002 0007 0009 0037 0060 0088 0096 0097 0106 0130 0135 0142 0151 0183 0184 0188 0190 0191 0192 0193 0195 0196 0198 0199 0200 0201 0202 0204 0208 0209 0210 0211 0212 0213 0215 0216 0218 0221 0230 9901 9910 9913 9914 9915 9918 9919 9920 9922 9923 9924 9925 9926 9927 9928 9929 9930 9931 9932 9933 9934 9935 9936 9937 9938 9939 9940 9941 9942 9943 9944 9945 9946 9947 9948 9949 9950 9951 9952 9953 9957 9959 "
-
 PEPPOL_CONST_GREEK_GDT = " 1.1 1.6 2.1 2.4 5.1 5.2 "
-PEPPOL_CONST_GREEK_TUID = ""  # depends on cbc:IssueDate! TODO USE GREEK INVOICE
-
 TSR_CONST_CL_SPIDTYPE = " CertSubjectCN "
 
 
@@ -276,6 +286,7 @@ VARIABLE_REPLACE_MAP = {
     "taxRepresentativeCountryIsNL": "(u:upper_case(normalize-space(/*/cac:TaxRepresentativeParty/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
     ################################################################################
     # Rule/Assert Level Variables
+    ################################################################################
     "lineExtensionAmount": "u:if_else(cbc:LineExtensionAmount, number(cbc:LineExtensionAmount), 0)",
     "priceAmount": "u:if_else(cac:Price/cbc:PriceAmount, number(cac:Price/cbc:PriceAmount), 0)",
     "baseQuantity": "u:if_else((cac:Price/cbc:BaseQuantity and number(cac:Price/cbc:BaseQuantity) != 0), number(cac:Price/cbc:BaseQuantity), 1)",
@@ -293,26 +304,55 @@ VARIABLE_REPLACE_MAP = {
             0
         )
     """,
-    # GREECE ? are they correct?
 }
 
 
 QUERY_CEN_CODES = ("AE", "E", "G", "K", "L", "M", "O", "S", "Z")
 
 QUERY_CEN_CODE_TAXTOTAL = {
-    f"/*/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[normalize-space(cbc:ID) = '{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"/*/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[normalize-space(cbc:ID) = '{code}' and cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT']"
+    f"/*/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[normalize-space(cbc:ID) = '{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"""
+        /*/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[
+            normalize-space(cbc:ID) = '{code}' and
+            cac:TaxScheme and
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
+        ]
+    """
     for code in QUERY_CEN_CODES
 }
 QUERY_CEN_CODE_ALLOWANCE_CHARGE_FALSE = {
-    f"//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}' and cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT']"
+    f"//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"""
+        //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[
+            normalize-space(cbc:ID)='{code}' and
+            cac:TaxScheme and
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
+        ]
+    """
     for code in QUERY_CEN_CODES
 }
 QUERY_CEN_CODE_ALLOWANCE_CHARGE_TRUE = {
-    f"//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}' and cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT']"
+    f"//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"""
+        //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[
+            normalize-space(cbc:ID)='{code}' and
+            cac:TaxScheme and
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
+        ]
+    """
     for code in QUERY_CEN_CODES
 }
 QUERY_CEN_CODE_INVOICELINE = {
-    f"//cac:InvoiceLine/cac:Item/cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = '{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT'] | //cac:CreditNoteLine/cac:Item/cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = '{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"//cac:InvoiceLine/cac:Item/cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = '{code}' and cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'] | //cac:CreditNoteLine/cac:Item/cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = '{code}' and cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT']"
+    f"//cac:InvoiceLine/cac:Item/cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = '{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT'] | //cac:CreditNoteLine/cac:Item/cac:ClassifiedTaxCategory[normalize-space(cbc:ID) = '{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"""
+        //cac:InvoiceLine/cac:Item/cac:ClassifiedTaxCategory[
+            normalize-space(cbc:ID) = '{code}' and
+            cac:TaxScheme and
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
+        ]
+        |
+        //cac:CreditNoteLine/cac:Item/cac:ClassifiedTaxCategory[
+            normalize-space(cbc:ID) = '{code}' and
+            cac:TaxScheme and
+            u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
+        ]
+    """
     for code in QUERY_CEN_CODES
 }
 
@@ -321,7 +361,9 @@ QUERY_CEN_CODE_INVOICELINE = {
 # Only used for context queries and duplicate variable names with different queries
 # To make it consistent, all to-be-translated query must be stripped and any multiple whiespaces must be replaced with a single whitespace
 QUERY_REPLACE_MAP = {
+    ################################################################################
     # CEN SCH Contexts
+    ################################################################################
     **QUERY_CEN_CODE_TAXTOTAL,
     **QUERY_CEN_CODE_ALLOWANCE_CHARGE_FALSE,
     **QUERY_CEN_CODE_ALLOWANCE_CHARGE_TRUE,
@@ -335,7 +377,9 @@ QUERY_REPLACE_MAP = {
     ]
     """,
     "//*[ends-with(name(), 'BinaryObject')]": "//*[substring(name(), string-length(name()) - 11) = 'BinaryObject']",
+    ################################################################################
     # PEPPOL SCH Contexts
+    ################################################################################
     "//cac:PaymentMeans[some $code in tokenize('49 59', '\\s') satisfies normalize-space(cbc:PaymentMeansCode) = $code]": "//cac:PaymentMeans[contains(' 49 59 ', concat(' ', normalize-space(cbc:PaymentMeansCode), ' '))]",
     "//cac:AccountingSupplierParty/cac:Party[cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'SE' and cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2) = 'SE']": "//cac:AccountingSupplierParty/cac:Party[cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'SE' and cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2) = 'SE']]",
     "//cac:TaxCategory[//cac:AccountingSupplierParty/cac:Party[cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'SE' and cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2) = 'SE'] and cbc:ID = 'S'] | //cac:ClassifiedTaxCategory[//cac:AccountingSupplierParty/cac:Party[cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'SE' and cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2) = 'SE'] and cbc:ID = 'S']": """
@@ -357,7 +401,9 @@ QUERY_REPLACE_MAP = {
         cbc:ID = 'S'
     ]
     """,
-    # Rule variables
+    ################################################################################
+    # Duplicated Variable Names
+    ################################################################################
     # "quantity" (from "cac:InvoiceLine | cac:CreditNoteLine")
     "if (/ubl-invoice:Invoice) then (if (cbc:InvoicedQuantity) then xs:decimal(cbc:InvoicedQuantity) else 1) else (if (cbc:CreditedQuantity) then xs:decimal(cbc:CreditedQuantity) else 1)": """
         u:if_else(
@@ -404,7 +450,9 @@ QUERY_REPLACE_MAP = {
 
 # Map of assert_id -> xpath1 query
 ASSERT_REPLACE_MAP = {
+    ################################################################################
     # CEN
+    ################################################################################
     **BR_CODE_08_TAXABLE_AMOUNT_ASSERT_MAP,
     **BR_CODE_08_PERCENT_RATE_ASSERT_MAP,
     "BR-CO-10": "number(cbc:LineExtensionAmount) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
@@ -1202,19 +1250,19 @@ ASSERT_REPLACE_MAP = {
     )
     """,
     "BR-CO-04": """
-    cac:Item/cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID
+        cac:Item/cac:ClassifiedTaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID
     """,
     "BR-CO-26": """
-    u:exists(cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:CompanyID) or u:exists(cac:Party/cac:PartyIdentification/cbc:ID) or u:exists(cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
+        u:exists(cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:CompanyID) or u:exists(cac:Party/cac:PartyIdentification/cbc:ID) or u:exists(cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
     """,
     "BR-CO-14": """
-    (number(cbc:TaxAmount) = u:round(sum(cac:TaxSubtotal/cbc:TaxAmount), 2)) or not(boolean(cac:TaxSubtotal))
+        (number(cbc:TaxAmount) = u:round(sum(cac:TaxSubtotal/cbc:TaxAmount), 2)) or not(boolean(cac:TaxSubtotal))
     """,
     "BR-47": """
-    u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID)
+        u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID)
     """,
     "BR-48": """
-    u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent) or (cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.)='O'])
+        u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:Percent) or (cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.)='O'])
     """,
     "BR-NL-1": "(contains(concat(' ', u:string_join(cac:PartyLegalEntity/cbc:CompanyID/@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', u:string_join(cac:PartyLegalEntity/cbc:CompanyID/@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(cac:PartyLegalEntity/cbc:CompanyID) != '')",
     "BR-NL-10": "(not(//cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'NL') or contains(concat(' ', u:string_join(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID/@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', u:string_join(//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID/@schemeID, ' '), ' '), ' 0190 ') ) and (not(cbc:CompanyID) or (normalize-space(cbc:CompanyID) != ''))",
@@ -1304,27 +1352,25 @@ ASSERT_REPLACE_MAP = {
         )
     )
     """,
-    #
-    "BR-32": "cac:TaxCategory[cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT']",
-    "BR-37": "cac:TaxCategory[cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID)) = 'VAT']",
+    "BR-32": "u:exists(cac:TaxCategory[cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'])",
+    "BR-37": "u:exists(cac:TaxCategory[cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID)) = 'VAT'])",
     "BR-56": "u:exists(cac:PartyTaxScheme[cac:TaxScheme and (normalize-space(u:upper_case(cac:TaxScheme/cbc:ID)) = 'VAT')]/cbc:CompanyID)",
+    ################################################################################
+    # PEPPOL
+    ################################################################################
     "PEPPOL-EN16931-CL002": f"contains('{PEPPOL_CONST_UNCL5189}', concat(' ', text(), ' '))",
     "PEPPOL-EN16931-CL003": f"contains('{PEPPOL_CONST_UNCL7161}', concat(' ', text(), ' '))",
     "PEPPOL-EN16931-CL006": f"contains('{PEPPOL_CONST_UNCL2005}', concat(' ', text(), ' '))",
     "PEPPOL-EN16931-P0101": "$profile != '01' or (contains(' 381 396 81 83 532 ', concat(' ', text(), ' ')))",
-    # PEPPOL
     "PEPPOL-EN16931-R054": "count(cac:TaxTotal[not(cac:TaxSubtotal)]) = u:if_else(//cbc:TaxCurrencyCode, 1, 0)",
     "PEPPOL-EN16931-CL001": f"contains('{PEPPOL_CONST_MIMECODE}', concat(' ', @mimeCode, ' '))",
     "PEPPOL-EN16931-CL007": f"contains('{PEPPOL_CONST_ISO4217}', concat(' ', @currencyID, ' '))",
     "PEPPOL-EN16931-P0100": "$profile != '01' or contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
     "PEPPOL-EN16931-CL008": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
-    # "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:call_elementpath(\"'%s' castable as xs:date\", string(.))",
     "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:castable(string(.), 'date')",
-    # PEPPOL TODO
     "PEPPOL-EN16931-R040": "not(cbc:MultiplierFactorNumeric and cbc:BaseAmount) or u:slack(u:if_else(cbc:Amount, cbc:Amount, 0), (number(cbc:BaseAmount) * number(cbc:MultiplierFactorNumeric)) div 100, 0.02)",
     "PEPPOL-EN16931-R110": "u:compare_date(text(), '>=' ,../../../cac:InvoicePeriod/cbc:StartDate)",
     "PEPPOL-EN16931-R111": "u:compare_date(text(), '<=' ,../../../cac:InvoicePeriod/cbc:EndDate)",
-    # "NO-R-001": "cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID, 1, 2)='NO' and re:match(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID,3), '^[0-9]{9}MVA$') and u:mod11(substring(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID, 3, 9)) or not(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID, 1, 2)='NO')",
     "NO-R-001": """
     (
         cac:PartyTaxScheme[
@@ -1342,18 +1388,15 @@ ASSERT_REPLACE_MAP = {
         ]
     )
     """,
-    # "GR-R-001-2": "string-length(normalize-space($IdSegments[1])) = 9 and u:TinVerification($IdSegments[1]) and ($IdSegments[1] = /*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 3, 9) or $IdSegments[1] = /*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 3, 9) )",
     "GR-R-001-2": """
-    string-length(normalize-space($IdSegments[1])) = 9 and 
-    u:TinVerification($IdSegments[1]) and 
-    (
-        $IdSegments[1] = substring(string(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID), 3, 9) or 
-        $IdSegments[1] = substring(string(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID), 3, 9)
-    )
+        string-length(normalize-space($IdSegments[1])) = 9 and 
+        u:TinVerification($IdSegments[1]) and 
+        (
+            $IdSegments[1] = substring(string(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID), 3, 9) or 
+            $IdSegments[1] = substring(string(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/cbc:CompanyID), 3, 9)
+        )
     """,
     "GR-R-001-5": f"string-length(normalize-space($IdSegments[4]))>0 and contains('{PEPPOL_CONST_GREEK_GDT}', concat(' ', $IdSegments[4], ' '))",
-    #
-    # "IS-R-008": "(u:exists(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']) and string-length(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']/cbc:ID) = 10 and (string(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']/cbc:ID) castable as xs:date)) or not(u:exists(cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']))",
     "IS-R-008": """
     (
         cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI' and string-length(cbc:ID) = 10] and 
@@ -1363,31 +1406,33 @@ ASSERT_REPLACE_MAP = {
         cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']
     )
     """,
-    # "NL-R-003": "(contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(.) != '')",
-    # "NL-R-005": "(contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(.) != '')",
+    ################################################################################
     # EUSR
+    ################################################################################
     "SCH-EUSR-03": "$empty or u:max(eusr:Subset/eusr:SendingEndUsers) <= number(eusr:FullSet/eusr:SendingEndUsers)",
     "SCH-EUSR-04": "$empty or u:max(eusr:Subset/eusr:ReceivingEndUsers) <= number(eusr:FullSet/eusr:ReceivingEndUsers)",
+    "SCH-EUSR-16": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-EUSR-17": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-EUSR-18": "u:compare_date(eusr:ReportPeriod/eusr:EndDate, '>=', eusr:ReportPeriod/eusr:StartDate)",
     "SCH-EUSR-22": "$empty or u:max(eusr:Subset/eusr:SendingOrReceivingEndUsers) <= number(eusr:FullSet/eusr:SendingOrReceivingEndUsers)",
-    "SCH-EUSR-40": "u:id_SCH_EUSR_40()",
     "SCH-EUSR-33": "u:for_every(eusr:Subset, 'number($VAR/eusr:SendingOrReceivingEndUsers) <= number($VAR/eusr:SendingEndUsers + $VAR/eusr:ReceivingEndUsers)')",
     "SCH-EUSR-34": "u:for_every(eusr:Subset, 'number($VAR/eusr:SendingOrReceivingEndUsers) >= number($VAR/eusr:SendingEndUsers)')",
     "SCH-EUSR-35": "u:for_every(eusr:Subset, 'number($VAR/eusr:SendingOrReceivingEndUsers) >= number($VAR/eusr:ReceivingEndUsers)')",
     "SCH-EUSR-36": "u:for_every(eusr:Subset, 'number($VAR/eusr:SendingOrReceivingEndUsers) > 0')",
-    "SCH-EUSR-16": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
-    "SCH-EUSR-17": "u:exists(re:match(normalize-space(eusr:ReportPeriod/eusr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
-    "SCH-EUSR-18": "u:compare_date(eusr:ReportPeriod/eusr:EndDate, '>=', eusr:ReportPeriod/eusr:StartDate)",
+    "SCH-EUSR-40": "u:id_SCH_EUSR_40()",
+    ################################################################################
     # TSR
+    ################################################################################
     "SCH-TSR-06": """
     u:for_every(
         tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key,
         \"count(tsr:Subtotal[normalize-space(@type) = 'PerTP']/tsr:Key[concat(normalize-space(@schemeID),'::',normalize-space(.)) = concat(normalize-space($VAR/@schemeID),'::',normalize-space($VAR))]) = 1\"
     )
     """,
-    "SCH-TSR-40": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
-    "SCH-TSR-41": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
-    "SCH-TSR-42": "u:compare_date(tsr:ReportPeriod/tsr:EndDate, '>=', tsr:ReportPeriod/tsr:StartDate)",
     "SCH-TSR-19": "u:exists(re:match(normalize-space(.), $re_seatid))",
     "SCH-TSR-28": f"u:for_every(tsr:Key[normalize-space(@metaSchemeID) = 'SP'], \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains('{TSR_CONST_CL_SPIDTYPE}', concat(' ', normalize-space($VAR/@schemeID), ' '))\")",
     "SCH-TSR-34": f"u:for_every(tsr:Key[normalize-space(@metaSchemeID) = 'SP'], \"not(contains(normalize-space($VAR/@schemeID), ' ')) and contains('{TSR_CONST_CL_SPIDTYPE}', concat(' ', normalize-space($VAR/@schemeID), ''))\")",
+    "SCH-TSR-40": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:StartDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-TSR-41": "u:exists(re:match(normalize-space(tsr:ReportPeriod/tsr:EndDate), '^[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}$'))",
+    "SCH-TSR-42": "u:compare_date(tsr:ReportPeriod/tsr:EndDate, '>=', tsr:ReportPeriod/tsr:StartDate)",
 }
