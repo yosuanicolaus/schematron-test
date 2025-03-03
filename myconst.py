@@ -5,16 +5,6 @@ SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
 SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
 SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
 SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
-TEST_INVOICE_PATH = "test_files/invoice.xml"
-TEST_INVOICE100_PATH = "test_files/invoice100.xml"
-TEST_NLCIUS_PATH = "test_files/nlcius.xml"
-TEST_GREECE_PATH = "test_files/greece.xml"
-TEST_NORWAY_PATH = "test_files/norway.xml"
-TEST_SWEDEN_PATH = "test_files/sweden.xml"
-TEST_ITALY_PATH = "test_files/italy.xml"
-TEST_EUSR_PATH = "test_files/eusr.xml"
-TEST_TSR_PATH = "test_files/tsr.xml"
-TEST_RANDOM_PATH = "test_files/random.xml"
 
 
 class TestMapValue(TypedDict):
@@ -22,102 +12,27 @@ class TestMapValue(TypedDict):
     test_file_path: str
 
 
-TEST_MAP: dict[str, TestMapValue] = {
-    "peppol": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH),
-        "test_file_path": TEST_INVOICE_PATH,
-    },
-    "peppol100": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH),
-        "test_file_path": TEST_INVOICE100_PATH,
-    },
-    "nlcius": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_NLCIUS_PATH),
-        "test_file_path": TEST_NLCIUS_PATH,
-    },
-    "eusr": {
-        "schematron_paths": (SCHEMATRON_EUSR_PATH,),
-        "test_file_path": TEST_EUSR_PATH,
-    },
-    "tsr": {
-        "schematron_paths": (SCHEMATRON_TSR_PATH,),
-        "test_file_path": TEST_TSR_PATH,
-    },
-    "test_ubl": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH),
-        "test_file_path": "test_files/test_ubl.xml",
-    },
-    "faulty": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH),
-        "test_file_path": "test_files/faulty.xml",
-    },
-    "justcen": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH,),
-        "test_file_path": TEST_INVOICE_PATH,
-    },
-    "justcen100": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH,),
-        "test_file_path": TEST_INVOICE100_PATH,
-    },
-    "justpeppol": {
-        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
-        "test_file_path": TEST_INVOICE_PATH,
-    },
-    "justpeppol100": {
-        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
-        "test_file_path": TEST_INVOICE100_PATH,
-    },
-    "justcengreece": {
-        "schematron_paths": (SCHEMATRON_CEN_PATH,),
-        "test_file_path": TEST_GREECE_PATH,
-    },
-    "justgreece": {
-        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
-        "test_file_path": TEST_GREECE_PATH,
-    },
-    "justnorway": {
-        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
-        "test_file_path": TEST_NORWAY_PATH,
-    },
-    "justsweden": {
-        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
-        "test_file_path": TEST_SWEDEN_PATH,
-    },
-    "justitaly": {
-        "schematron_paths": (SCHEMATRON_PEPPOL_PATH,),
-        "test_file_path": TEST_ITALY_PATH,
-    },
-    "all": {
-        "schematron_paths": (
-            SCHEMATRON_CEN_PATH,
-            SCHEMATRON_PEPPOL_PATH,
-            SCHEMATRON_NLCIUS_PATH,
-            SCHEMATRON_EUSR_PATH,
-            SCHEMATRON_TSR_PATH,
-        ),
-        "test_file_path": TEST_INVOICE_PATH,
-    },
-    "all100": {
-        "schematron_paths": (
-            SCHEMATRON_CEN_PATH,
-            SCHEMATRON_PEPPOL_PATH,
-            SCHEMATRON_NLCIUS_PATH,
-            SCHEMATRON_EUSR_PATH,
-            SCHEMATRON_TSR_PATH,
-        ),
-        "test_file_path": TEST_INVOICE100_PATH,
-    },
-    "random": {
-        "schematron_paths": (
-            SCHEMATRON_CEN_PATH,
-            SCHEMATRON_PEPPOL_PATH,
-            SCHEMATRON_NLCIUS_PATH,
-            SCHEMATRON_EUSR_PATH,
-            SCHEMATRON_TSR_PATH,
-        ),
-        "test_file_path": TEST_RANDOM_PATH,
-    },
+SPECIAL_FILE_SCHEMATRON: dict[str, list[str]] = {
+    "nlcius": [SCHEMATRON_CEN_PATH, SCHEMATRON_NLCIUS_PATH],
+    "eusr": [SCHEMATRON_EUSR_PATH],
+    "tsr": [SCHEMATRON_TSR_PATH],
+    "all": [SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH, SCHEMATRON_NLCIUS_PATH, SCHEMATRON_EUSR_PATH, SCHEMATRON_TSR_PATH],
+    "justcen": [SCHEMATRON_CEN_PATH],
+    "justpeppol": [SCHEMATRON_PEPPOL_PATH],
+    "justnlcius": [SCHEMATRON_NLCIUS_PATH],
 }
+
+
+def get_file_and_schematron_paths(args: list[str]) -> tuple[str, list[str]]:
+    arg = args[0]
+    file_path = f"test_files/{arg}.xml"
+
+    if len(args) >= 2:
+        schematron_paths = SPECIAL_FILE_SCHEMATRON[args[1]]
+    else:
+        schematron_paths = SPECIAL_FILE_SCHEMATRON.get(arg, [SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH])
+
+    return file_path, schematron_paths
 
 
 PATH_ROOT_MAP = {
@@ -192,15 +107,15 @@ BR_CODE_08_TAXABLE_AMOUNT_ASSERT_MAP = {
             //cac:InvoiceLine and 
             number(../cbc:TaxableAmount) = (
                 sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory and normalize-space(cac:Item/cac:ClassifiedTaxCategory/cbc:ID) = '{code}']/cbc:LineExtensionAmount) + 
-                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = true() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount) - 
-                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = false() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount)
+                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'true' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount) - 
+                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'false' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount)
             )
         ) or (
             //cac:CreditNoteLine and 
             number(../cbc:TaxableAmount) = (
                 sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory and normalize-space(cac:Item/cac:ClassifiedTaxCategory/cbc:ID) = '{code}']/cbc:LineExtensionAmount) + 
-                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = true() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount) - 
-                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = false() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount)
+                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'true' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount) - 
+                sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'false' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}']/cbc:Amount)
             )
         )
         """
@@ -216,14 +131,14 @@ BR_CODE_08_PERCENT_RATE_ASSERT_MAP = {
                 (
                   ../number(cbc:TaxableAmount) - 1 < (
                         sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory and normalize-space(cac:Item/cac:ClassifiedTaxCategory/cbc:ID) = '{code}' and number(cac:Item/cac:ClassifiedTaxCategory/cbc:Percent) = number($VAR)]/cbc:LineExtensionAmount) +
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = true() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = false() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'true' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'false' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
                     )
                 ) and (
                   ../number(cbc:TaxableAmount) + 1 > (
                         sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory and normalize-space(cac:Item/cac:ClassifiedTaxCategory/cbc:ID) = '{code}' and number(cac:Item/cac:ClassifiedTaxCategory/cbc:Percent) = number($VAR)]/cbc:LineExtensionAmount) +
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = true() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = false() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'true' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'false' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
                     )
                 )
             )
@@ -232,14 +147,14 @@ BR_CODE_08_PERCENT_RATE_ASSERT_MAP = {
                 (
                   ../number(cbc:TaxableAmount) - 1 < (
                         sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory and normalize-space(cac:Item/cac:ClassifiedTaxCategory/cbc:ID) = '{code}' and number(cac:Item/cac:ClassifiedTaxCategory/cbc:Percent) = number($VAR)]/cbc:LineExtensionAmount) +
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = true() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = false() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'true' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'false' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
                     )
                 ) and (
                   ../number(cbc:TaxableAmount) + 1 > (
                         sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory and normalize-space(cac:Item/cac:ClassifiedTaxCategory/cbc:ID) = '{code}' and number(cac:Item/cac:ClassifiedTaxCategory/cbc:Percent) = number($VAR)]/cbc:LineExtensionAmount) +
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = true() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
-                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = false() and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'true' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount) -
+                        sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator = 'false' and cac:TaxCategory and normalize-space(cac:TaxCategory/cbc:ID) = '{code}' and cac:TaxCategory/number(cbc:Percent) = number($VAR)]/cbc:Amount)
                     )
                 )
             )
@@ -292,15 +207,15 @@ VARIABLE_REPLACE_MAP = {
     "baseQuantity": "u:if_else((cac:Price/cbc:BaseQuantity and number(cac:Price/cbc:BaseQuantity) != 0), number(cac:Price/cbc:BaseQuantity), 1)",
     "allowancesTotal": """
         u:if_else(
-            cac:AllowanceCharge[normalize-space(cbc:ChargeIndicator) = false()],
-            u:round(sum(cac:AllowanceCharge[normalize-space(cbc:ChargeIndicator) = false()]/cbc:Amount), 2),
+            cac:AllowanceCharge[cbc:ChargeIndicator = 'false'],
+            u:round(sum(cac:AllowanceCharge[cbc:ChargeIndicator = 'false']/cbc:Amount), 2),
             0
         )
     """,
     "chargesTotal": """
         u:if_else(
-            cac:AllowanceCharge[normalize-space(cbc:ChargeIndicator) = true()],
-            u:round(sum(cac:AllowanceCharge[normalize-space(cbc:ChargeIndicator) = true()]/cbc:Amount), 2),
+            cac:AllowanceCharge[cbc:ChargeIndicator = 'true'],
+            u:round(sum(cac:AllowanceCharge[cbc:ChargeIndicator = 'true']/cbc:Amount), 2),
             0
         )
     """,
@@ -321,7 +236,7 @@ QUERY_CEN_CODE_TAXTOTAL = {
 }
 QUERY_CEN_CODE_ALLOWANCE_CHARGE_FALSE = {
     f"//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"""
-        //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[
+        //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[
             normalize-space(cbc:ID)='{code}' and
             cac:TaxScheme and
             u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
@@ -331,7 +246,7 @@ QUERY_CEN_CODE_ALLOWANCE_CHARGE_FALSE = {
 }
 QUERY_CEN_CODE_ALLOWANCE_CHARGE_TRUE = {
     f"//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[normalize-space(cbc:ID)='{code}'][cac:TaxScheme/normalize-space(upper-case(cbc:ID))='VAT']": f"""
-        //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[
+        //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[
             normalize-space(cbc:ID)='{code}' and
             cac:TaxScheme and
             u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'
@@ -456,8 +371,8 @@ ASSERT_REPLACE_MAP = {
     **BR_CODE_08_TAXABLE_AMOUNT_ASSERT_MAP,
     **BR_CODE_08_PERCENT_RATE_ASSERT_MAP,
     "BR-CO-10": "number(cbc:LineExtensionAmount) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
-    "BR-CO-12": "number(cbc:AllowanceTotalAmount) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
-    "BR-CO-11": "number(cbc:AllowanceTotalAmount) = (u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cbc:Amount), 2)) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator=false()]))",
+    "BR-CO-12": "number(cbc:AllowanceTotalAmount) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator='false']))",
+    "BR-CO-11": "number(cbc:AllowanceTotalAmount) = (u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount), 2)) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator='false']))",
     "BR-53": "u:for_every(cbc:TaxCurrencyCode, 'u:exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR])')",
     "BR-AE-01": """
         (
@@ -504,7 +419,7 @@ ASSERT_REPLACE_MAP = {
     """,
     "BR-AE-03": """
     (
-        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]) 
+        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']]) 
         and 
         (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID) 
@@ -519,12 +434,12 @@ ASSERT_REPLACE_MAP = {
         )
     ) 
     or not(
-        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']])
+        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[normalize-space(cbc:ID) = 'AE'][cac:TaxScheme[normalize-space(u:upper_case(cbc:ID)) = 'VAT']])
     )
     """,
     "BR-AE-04": """
     (
-        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']])
+        u:exists(//cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']])
         and
         (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -540,7 +455,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'AE'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
         )
     )
     """,
@@ -598,7 +513,7 @@ ASSERT_REPLACE_MAP = {
     "BR-E-03": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -609,14 +524,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
     "BR-E-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -627,7 +542,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='E'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -679,7 +594,7 @@ ASSERT_REPLACE_MAP = {
     "BR-G-03": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
@@ -690,14 +605,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
     "BR-G-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
@@ -708,7 +623,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='G'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -763,7 +678,7 @@ ASSERT_REPLACE_MAP = {
     "BR-IC-03": """
     (
         u:exists(
-            //cac:allowancecharge[cbc:chargeindicator=false()]/cac:taxcategory[cbc:id[normalize-space(.) = 'k'] and cac:taxscheme/cbc:id[normalize-space(u:upper_case(.))='vat']]
+            //cac:allowancecharge[cbc:chargeindicator='false']/cac:taxcategory[cbc:id[normalize-space(.) = 'k'] and cac:taxscheme/cbc:id[normalize-space(u:upper_case(.))='vat']]
         )
         and (
             u:exists(//cac:accountingsupplierparty/cac:party/cac:partytaxscheme[cac:taxscheme/cbc:id[normalize-space(u:upper_case(.)) = 'vat']]/cbc:companyid)
@@ -777,14 +692,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:allowancecharge[cbc:chargeindicator=false()]/cac:taxcategory[cbc:id[normalize-space(.) = 'k'] and cac:taxscheme/cbc:id[normalize-space(u:upper_case(.))='vat']]
+            //cac:allowancecharge[cbc:chargeindicator='false']/cac:taxcategory[cbc:id[normalize-space(.) = 'k'] and cac:taxscheme/cbc:id[normalize-space(u:upper_case(.))='vat']]
         )
     )
     """,
     "BR-IC-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
@@ -798,7 +713,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'K'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -865,7 +780,7 @@ ASSERT_REPLACE_MAP = {
     "BR-IG-03": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -876,14 +791,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
     "BR-IG-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -894,7 +809,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='L'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -931,7 +846,7 @@ ASSERT_REPLACE_MAP = {
     "BR-IP-03": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -942,14 +857,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
     "BR-IP-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -960,7 +875,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='M'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -1015,7 +930,7 @@ ASSERT_REPLACE_MAP = {
     "BR-O-03": """
     (
         u:exists(
-            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
         )
         and not(
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
@@ -1029,14 +944,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
         )
     )
     """,
     "BR-O-04": """
     (
         u:exists(
-            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
         )
         and not(
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]/cbc:CompanyID)
@@ -1050,7 +965,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
+            (/ubl:Invoice|/cn:CreditNote)/cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.)) = 'VAT']]
         )
     )
     """,
@@ -1090,7 +1005,7 @@ ASSERT_REPLACE_MAP = {
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
         )
         and count(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         ) = 0
     )
     or not(
@@ -1105,7 +1020,7 @@ ASSERT_REPLACE_MAP = {
             cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(.)='VAT'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID[normalize-space(.) = 'O']
         )
         and count(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)!= 'O'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         ) = 0
     )
     or not(
@@ -1135,7 +1050,7 @@ ASSERT_REPLACE_MAP = {
     "BR-S-03": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -1146,14 +1061,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
     "BR-S-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -1164,7 +1079,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='S'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -1216,7 +1131,7 @@ ASSERT_REPLACE_MAP = {
     "BR-Z-03": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.)='Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.)='Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -1227,14 +1142,14 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=false()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='false']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
     "BR-Z-04": """
     (
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.)='Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.)='Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
         and (
             u:exists(//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID)
@@ -1245,7 +1160,7 @@ ASSERT_REPLACE_MAP = {
     )
     or not(
         u:exists(
-            //cac:AllowanceCharge[cbc:ChargeIndicator=true()]/cac:TaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
+            //cac:AllowanceCharge[cbc:ChargeIndicator='true']/cac:TaxCategory[cbc:ID[normalize-space(.) = 'Z'] and cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]
         )
     )
     """,
@@ -1288,20 +1203,20 @@ ASSERT_REPLACE_MAP = {
             u:exists(//cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) or u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount),
             (
               ../cbc:TaxableAmount - 1 < (
-                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
                 )
                 and../cbc:TaxableAmount + 1 > (
-                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
                 )
             ),
             u:if_else(
                 u:exists(//cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) or u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount),
                 (
                   ../cbc:TaxableAmount - 1 < (
-                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
                     )
                     and../cbc:TaxableAmount + 1 > (
-                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=true()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator=false()][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
                     )
                 ),
                 true()

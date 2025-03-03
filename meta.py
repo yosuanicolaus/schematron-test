@@ -9,16 +9,15 @@ import ipdb
 from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
-from saxonche import PySaxonProcessor
 
 from myconst import (
     ASSERT_REPLACE_MAP,
     GNSMAP,
     PATH_ROOT_MAP,
     QUERY_REPLACE_MAP,
-    TEST_MAP,
     VARIABLE_REPLACE_MAP,
     VARIABLE_TO_IGNORE,
+    get_file_and_schematron_paths,
 )
 
 parser = elementpath.XPath2Parser
@@ -165,6 +164,10 @@ def _xpath_transform_query(path: str) -> str:
         path = re.sub(r"tokenize", "u:tokenize", path)
     if "string-join" in path:
         path = re.sub(r"string-join", "u:string_join", path)
+    if "cbc:ChargeIndicator = false()" in path:
+        path = re.sub(r"cbc:ChargeIndicator = false\(\)", "cbc:ChargeIndicator = 'false'", path)
+    if "cbc:ChargeIndicator = true()" in path:
+        path = re.sub(r"cbc:ChargeIndicator = true\(\)", "cbc:ChargeIndicator = 'true'", path)
 
     return path
 
@@ -817,11 +820,12 @@ class ElementRule(Element):
 
 def run_schematron(name: str):
     global times
-    if name not in TEST_MAP:
-        raise Exception("Invalid schematron argument!")
-
-    schematron_paths = TEST_MAP[name]["schematron_paths"]
-    test_file_path = TEST_MAP[name]["test_file_path"]
+    # if name not in TEST_MAP:
+    #     raise Exception("Invalid schematron argument!")
+    #
+    # schematron_paths = TEST_MAP[name]["schematron_paths"]
+    # test_file_path = TEST_MAP[name]["test_file_path"]
+    test_file_path, schematron_paths = get_file_and_schematron_paths(sys.argv[1:])
 
     for schematron_path in schematron_paths:
         root_name = PATH_ROOT_MAP[schematron_path]
@@ -843,9 +847,9 @@ def run_schematron(name: str):
 
 def main():
     to_run = sys.argv[1]
-    if to_run == "saxonche":
-        saxonche()
-        return
+    # if to_run == "saxonche":
+    #     saxonche()
+    #     return
 
     if len(sys.argv) > 2:
         global stress_mode
@@ -854,28 +858,6 @@ def main():
     tt = time()
     run_schematron(to_run)
     pprint(time() - tt)
-
-
-def saxonche():
-    tt = time()
-    with PySaxonProcessor(license=False) as proc:
-        xsltproc = proc.new_xslt30_processor()
-        peppol_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/peppol.xsl")
-        cen_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/cen.xsl")
-
-    with PySaxonProcessor(license=False):
-        for sch in (cen_sch, peppol_sch):
-            print(f"Running {'CEN' if sch == cen_sch else 'PEPPOL'}")
-            output = sch.transform_to_string(source_file=TEST_MAP["peppol100"]["test_file_path"])
-            svrl = etree.fromstring(output.encode()).getroottree()
-            warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
-            fatal = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="fatal"]')]
-            print("Warning:")
-            pprint(warning)
-            print("Fatal:")
-            pprint(fatal)
-
-    print(time() - tt)
 
 
 if __name__ == "__main__":

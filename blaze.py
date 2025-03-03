@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 from time import time
@@ -8,16 +9,15 @@ import ipdb
 from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
-from saxonche import PySaxonProcessor
 
 from myconst import (
     ASSERT_REPLACE_MAP,
     GNSMAP,
     PATH_ROOT_MAP,
     QUERY_REPLACE_MAP,
-    TEST_MAP,
     VARIABLE_REPLACE_MAP,
     VARIABLE_TO_IGNORE,
+    get_file_and_schematron_paths,
 )
 
 XPathList = list[_Element]
@@ -30,6 +30,7 @@ dummy_xml = etree.Element("unused")
 utils_ns = etree.FunctionNamespace("utils")
 utils_ns.prefix = "u"
 
+_logger = logging.getLogger(__name__)
 
 # Sync everything below until just before Script Logic with `schematron_validation.py`
 
@@ -38,14 +39,23 @@ utils_ns.prefix = "u"
 ################################################################################
 
 
-def try_xpath(xml: _Element, path: str, namespaces: dict, variables: dict) -> XPathObject:
+def try_xpath(xml: _Element, path: str, namespaces: dict, variables: dict, schematron_vals: dict) -> XPathObject:
     try:
         val = xml.xpath(path, namespaces=namespaces, **variables)
-        # TODO (if needed): convert _XPathObject (lxml) to XPathObject (custom); handle other possible lxml _XPathObject types
         return val
-    except Exception as e:
-        # TODO: Log error here
-        print(f"XPath failed ({e}) on path:\n%s" % path)
+    except Exception as err:
+        error_detail = "\n".join(
+            (
+                f"Error: {err}",
+                f"Type: {schematron_vals['current']['type']}",
+                f"Key: {schematron_vals['current']['key']}",
+                "-----",
+                path,
+                "-----",
+            )
+        )
+        _logger.error("Schematron XPath failed.\n%s", error_detail)
+        schematron_vals["errors"].append(error_detail)
         return False
 
 
@@ -96,6 +106,10 @@ def _xpath_transform_query(query: str) -> str:
         query = re.sub(r"tokenize", "u:tokenize", query)
     if "string-join" in query:
         query = re.sub(r"string-join", "u:string_join", query)
+    if "cbc:ChargeIndicator = false()" in query:
+        query = re.sub(r"cbc:ChargeIndicator = false\(\)", "cbc:ChargeIndicator = 'false'", query)
+    if "cbc:ChargeIndicator = true()" in query:
+        query = re.sub(r"cbc:ChargeIndicator = true\(\)", "cbc:ChargeIndicator = 'true'", query)
 
     return query
 
@@ -398,7 +412,7 @@ class Element(Generic[T]):
         self.children: List[T] = []
         self._variables: List[Tuple[str, str]] = []
         self.parent: Optional[Element] = parent
-        self.root_name: Optional[str] = parent and parent.root_name
+        self.root_name: str = parent.root_name if parent else ""
 
     def add_variable(self, name: str, path: str):
         query = _xpath_normalize_query(path)
@@ -412,19 +426,20 @@ class Element(Generic[T]):
         else:
             return self._variables
 
-    def run(self, xml: _Element, variables_dict: Optional[dict] = None) -> Tuple[List[str], List[str]]:
+    def run(self, xml: _Element, variables: dict, schematron_vals: dict) -> Tuple[List[str], List[str]]:
         """Evaluate the variables at the current level, and then run the children."""
-        evars = variables_dict and variables_dict.copy() or {}
+        element_variables = variables.copy()
 
         for name, query in self._variables:
             if name in VARIABLE_TO_IGNORE:
                 continue
 
-            evars[name] = try_xpath(xml, query, self.namespaces, evars)
+            schematron_vals["current"] = {"key": name, "type": "element variable"}
+            element_variables[name] = try_xpath(xml, query, self.namespaces, element_variables, schematron_vals)
 
         warning, fatal = [], []
         for child in self.children:
-            res_warning, res_fatal = child.run(xml, variables_dict=evars)
+            res_warning, res_fatal = child.run(xml, element_variables, schematron_vals)
             warning += res_warning
             fatal += res_fatal
 
@@ -519,14 +534,13 @@ class ElementRule(Element):
 
         # List of 4 element tuples, consisting of assert_id, flag, query, message
         self._assertions: List[Tuple[str, str, str, str]] = []
-        # self.namespaces.update({"re": "http://exslt.org/regular-expressions"})
 
     def add_assert(self, assert_id: str, flag: str, test: str, message: str):
         query = _xpath_normalize_query(test)
         query = ASSERT_REPLACE_MAP.get(assert_id, _xpath_transform_query(query))
         self._assertions.append((assert_id, flag, query, message))
 
-    def run(self, xml: _Element, variables_dict: Optional[dict] = None):
+    def run(self, xml: _Element, variables: dict, schematron_vals: dict):
         """
         This method overrides Element.run function because ElementRule is at the bottom of the Element tree,
         and it does not have any children.
@@ -534,8 +548,9 @@ class ElementRule(Element):
         Here, we evaluate through all the gathered assertions and variables, and evaluate the XML with some
         strategies to combat the severe performance issues from running elementpath.Selector.select multiple times.
         """
-        variables_dict = variables_dict and variables_dict.copy() or {}
-        context_nodes = try_xpath(xml, self.context_path, self.namespaces, variables_dict)
+        element_variables = variables.copy()
+        schematron_vals["current"] = {"key": "<context>", "type": "rule context"}
+        context_nodes = try_xpath(xml, self.context_path, self.namespaces, element_variables, schematron_vals)
         warning, fatal = [], []
 
         if not isinstance(context_nodes, list):
@@ -546,14 +561,15 @@ class ElementRule(Element):
                 continue
 
             # If the rule has additional variable, we evaluate them here.
-            evars: dict[str, XPathObject] = variables_dict.copy()
-
+            rule_variables: dict[str, XPathObject] = element_variables.copy()
             if self._variables:
                 for name, query in self._variables:
-                    evars[name] = try_xpath(context_node, query, self.namespaces, evars)
+                    schematron_vals["current"] = {"key": "name", "type": "rule variable"}
+                    rule_variables[name] = try_xpath(context_node, query, self.namespaces, rule_variables, schematron_vals)
 
             for assert_id, flag, query, message in self._assertions:
-                res = try_xpath(context_node, query, self.namespaces, evars)
+                schematron_vals["current"] = {"key": assert_id, "type": "rule assertion"}
+                res = try_xpath(context_node, query, self.namespaces, rule_variables, schematron_vals)
                 if not res:
                     assert_message = f"[{assert_id}]-{message}" if self.root_name == "PEPPOL" else message
                     if flag == "warning":
@@ -569,60 +585,50 @@ class ElementRule(Element):
 ################################################################################
 
 
-def run_schematron(name: str):
-    if name not in TEST_MAP:
-        raise Exception("Invalid schematron argument!")
-
-    schematron_paths = TEST_MAP[name]["schematron_paths"]
-    test_file_path = TEST_MAP[name]["test_file_path"]
+def run_schematron():
+    test_file_path, schematron_paths = get_file_and_schematron_paths(sys.argv[1:])
+    errors_to_email = {}
 
     for schematron_path in schematron_paths:
         root_name = PATH_ROOT_MAP[schematron_path]
         print(f"Running {root_name} schematron on {test_file_path}")
         schematron = ElementSchematron.from_sch(etree.parse(schematron_path).getroot(), root_name)
         doc = etree.parse(test_file_path).getroot()
-        warning, fatal = schematron.run(doc)
+        schematron_vals = {"current": {"type": "", "key": ""}, "errors": []}
+        warning, fatal = schematron.run(doc, {}, schematron_vals)
         print("Warning:")
-        pprint(warning)
+        pprint(sorted(set(warning)))
         print("Fatal:")
-        pprint(fatal)
+        pprint(sorted(set(fatal)))
+        if schematron_vals["errors"]:
+            errors_to_email[schematron.root_name] = schematron_vals["errors"]
+
+    if errors_to_email:
+        error_body = [
+            "Schematron XPath failed on the following peppol_message:",
+            "<peppol.message link here>",
+            "-" * 80,
+        ]
+        for schematron_name, error_list in errors_to_email.items():
+            error_body.extend(
+                (
+                    f"Schematron: {schematron_name}",
+                    *error_list,
+                    "-" * 80,
+                )
+            )
+        email_str = "\n\n".join(error_body)
+        print(email_str)
 
 
 def main():
-    to_run = sys.argv[1]
-    if to_run == "saxonche":
-        saxonche()
-        return
-
     if len(sys.argv) > 2:
         global stress_mode
         stress_mode = sys.argv[2].upper()
 
     tt = time()
-    run_schematron(to_run)
+    run_schematron()
     pprint(time() - tt)
-
-
-def saxonche():
-    tt = time()
-    with PySaxonProcessor(license=False) as proc:
-        xsltproc = proc.new_xslt30_processor()
-        peppol_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/peppol.xsl")
-        cen_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/cen.xsl")
-
-    with PySaxonProcessor(license=False):
-        for sch in (cen_sch, peppol_sch):
-            print(f"Running {'CEN' if sch == cen_sch else 'PEPPOL'}")
-            output = sch.transform_to_string(source_file=TEST_MAP["peppol100"]["test_file_path"])
-            svrl = etree.fromstring(output.encode()).getroottree()
-            warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
-            fatal = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="fatal"]')]
-            print("Warning:")
-            pprint(warning)
-            print("Fatal:")
-            pprint(fatal)
-
-    print(time() - tt)
 
 
 if __name__ == "__main__":

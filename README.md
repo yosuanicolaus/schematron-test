@@ -12,3 +12,5 @@ References:
 - [regex in xpath using re:match (need namespace)](https://stackoverflow.com/a/2756994/17859248)
 
 For `some $foo in $listvals satisfies $foo = @someelem`, one idea with [contains](https://stackoverflow.com/a/3025957/17859248)
+
+TODO: COMMON-R043 bring back the mod() later

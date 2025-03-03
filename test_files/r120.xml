@@ -1,0 +1,271 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Invoice xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>INV/2025/00313</cbc:ID>
+  <cbc:IssueDate>2025-03-03</cbc:IssueDate>
+  <cbc:DueDate>2025-04-02</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>Algemene voorwaarden: https://webshop.idecoffee.be/terms [1]
+
+
+[1] https://webshop.idecoffee.be/terms</cbc:Note>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cac:OrderReference>
+    <cbc:ID>INV/2025/00313</cbc:ID>
+    <cbc:SalesOrderID>CT2500274</cbc:SalesOrderID>
+  </cac:OrderReference>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>INV_2025_00313.pdf</cbc:ID>
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2025_00313.pdf">asdf</cbc:EmbeddedDocumentBinaryObject>
+    </cac:Attachment>
+  </cac:AdditionalDocumentReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0208">0794675072</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Coffee Technics</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Z.5 Mollem 410</cbc:StreetName>
+        <cbc:CityName>Asse</cbc:CityName>
+        <cbc:PostalZone>1730</cbc:PostalZone>
+        <cbc:CountrySubentity>Vlaams-Brabant</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>BE0794675072</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Coffee Technics</cbc:RegistrationName>
+        <cbc:CompanyID>BE0794675072</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Coffee Technics</cbc:Name>
+        <cbc:Telephone>+32 2 583 00 10</cbc:Telephone>
+        <cbc:ElectronicMail>info@coffeetechnics.be</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0208">0479330349</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Idé Coffee Systems BV</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Z5 Mollem 410</cbc:StreetName>
+        <cbc:CityName>Asse</cbc:CityName>
+        <cbc:PostalZone>1730</cbc:PostalZone>
+        <cbc:CountrySubentity>Vlaams-Brabant</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>BE0479330349</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Idé Coffee Systems BV</cbc:RegistrationName>
+        <cbc:CompanyID>BE0479330349</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Idé Coffee Systems BV</cbc:Name>
+        <cbc:Telephone>+32 2 243 03 09</cbc:Telephone>
+        <cbc:ElectronicMail>info@idecoffee.be</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2025-03-03</cbc:ActualDeliveryDate>
+    <cac:DeliveryLocation>
+      <cac:Address>
+        <cbc:StreetName>Pleinlaan 2 -  gebouw M (Braemgebouw)</cbc:StreetName>
+        <cbc:AdditionalStreetName>3de verdiep</cbc:AdditionalStreetName>
+        <cbc:CityName>Elsene</cbc:CityName>
+        <cbc:PostalZone>1050</cbc:PostalZone>
+        <cbc:CountrySubentity>Brussels Hoofdstedelijk Gewest</cbc:CountrySubentity>
+        <cac:Country>
+          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:Address>
+    </cac:DeliveryLocation>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode name="credit transfer">30</cbc:PaymentMeansCode>
+    <cbc:PaymentID>+++000/0052/70029+++</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>BE20363154231656</cbc:ID>
+      <cac:FinancialInstitutionBranch>
+        <cbc:ID>BBRUBEBB</cbc:ID>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Betaalvoorwaarden: 30 dagen</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">43.96</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">209.31</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">43.96</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">209.31</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">209.31</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">253.27</cbc:TaxInclusiveAmount>
+    <cbc:PrepaidAmount currencyID="EUR">0.00</cbc:PrepaidAmount>
+    <cbc:PayableAmount currencyID="EUR">253.27</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">54.02</cbc:LineExtensionAmount>
+    <cac:AllowanceCharge>
+      <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
+      <cbc:AllowanceChargeReasonCode>95</cbc:AllowanceChargeReasonCode>
+      <cbc:Amount currencyID="EUR">23.15</cbc:Amount>
+    </cac:AllowanceCharge>
+    <cac:Item>
+      <cbc:Description>[JBURRSET] JBURRSET - Couteaux/lames moulin</cbc:Description>
+      <cbc:Name>JBURRSET - Couteaux/lames moulin</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>JBURRSET</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">77.1714285714</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">1.79</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[J64053] Jura O-ring 3.4x1.9.</cbc:Description>
+      <cbc:Name>Jura O-ring 3.4x1.9.</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>J64053</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">1.79</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>3</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">2.95</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[J67313] O-ring zetgroep 35.4x3.53</cbc:Description>
+      <cbc:Name>O-ring zetgroep 35.4x3.53</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>J67313</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">2.95</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>4</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">2.60</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[J72552] Jura O-Ring 9.00x3.00 Silikon</cbc:Description>
+      <cbc:Name>Jura O-Ring 9.00x3.00 Silikon</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>J72552</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">2.6</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>5</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">1.95</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[J64919] O-ring 5,0x3,0 EPDM</cbc:Description>
+      <cbc:Name>O-ring 5,0x3,0 EPDM</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>J64919</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">1.95</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>6</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="HUR">2.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">146.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>Gepresteerde werkuren</cbc:Description>
+      <cbc:Name>Gepresteerde werkuren</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">73.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>
