@@ -21,7 +21,7 @@ from myconst import (
 )
 
 XPathList = list[_Element]
-XPathObject = bool | str | float | XPathList
+XPathObject = bool | str | float | XPathList | list[str]
 T = TypeVar("T", bound="Element")
 
 to_handle_map: dict[str, str] = {}
@@ -397,8 +397,15 @@ def xpath_u_tokenize(_, value, delimiter: str):
 
 
 @utils_ns("string_join")
-def xpath_u_string_join(_, elements: XPathList, joiner: str):
-    return joiner.join(_destructure_xpath_list(elements))
+def xpath_u_string_join(_, elements: list[str] | list[_Element], joiner: str) -> str:
+    if not elements:
+        return ""
+    elif isinstance(elements[0], str):
+        # elements is list[str]
+        return joiner.join(elements)
+    else:
+        # elements is list[_Element]
+        return joiner.join(_destructure_xpath_list(elements))
 
 
 ################################################################################

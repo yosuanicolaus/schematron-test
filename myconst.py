@@ -370,9 +370,9 @@ ASSERT_REPLACE_MAP = {
     ################################################################################
     **BR_CODE_08_TAXABLE_AMOUNT_ASSERT_MAP,
     **BR_CODE_08_PERCENT_RATE_ASSERT_MAP,
-    "BR-CO-10": "number(cbc:LineExtensionAmount) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
-    "BR-CO-12": "number(cbc:AllowanceTotalAmount) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator='false']))",
-    "BR-CO-11": "number(cbc:AllowanceTotalAmount) = (u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount), 2)) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator='false']))",
+    "BR-CO-10": "u:round(number(cbc:LineExtensionAmount), 2) = u:if_else(//cac:InvoiceLine, u:round(sum(//cac:InvoiceLine/cbc:LineExtensionAmount), 2), u:round(sum(//cac:CreditNoteLine/cbc:LineExtensionAmount), 2))",
+    "BR-CO-11": "u:round(number(cbc:AllowanceTotalAmount), 2) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator='false']/cbc:Amount), 2) or (not(cbc:AllowanceTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator='false']))",
+    "BR-CO-12": "u:round(number(cbc:ChargeTotalAmount), 2) = u:round(sum(../cac:AllowanceCharge[cbc:ChargeIndicator='true']/cbc:Amount), 2) or (not(cbc:ChargeTotalAmount) and not(../cac:AllowanceCharge[cbc:ChargeIndicator='true']))",
     "BR-53": "u:for_every(cbc:TaxCurrencyCode, 'u:exists(//cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR])')",
     "BR-AE-01": """
         (
@@ -462,7 +462,10 @@ ASSERT_REPLACE_MAP = {
     "BR-CO-15": """
     u:for_every(
         cbc:DocumentCurrencyCode,
-        '(count(cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR]) = 1) and (number(cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount) = u:round(cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount + cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR], 2))'
+        "(count(cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR]) = 1)
+         and
+         (u:round(number(cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount), 2) =
+          u:round(cac:LegalMonetaryTotal/cbc:TaxExclusiveAmount + cac:TaxTotal/cbc:TaxAmount[@currencyID=$VAR], 2))"
     )
     """,
     "BR-E-01": """
@@ -1171,7 +1174,7 @@ ASSERT_REPLACE_MAP = {
         u:exists(cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:CompanyID) or u:exists(cac:Party/cac:PartyIdentification/cbc:ID) or u:exists(cac:Party/cac:PartyLegalEntity/cbc:CompanyID)
     """,
     "BR-CO-14": """
-        (number(cbc:TaxAmount) = u:round(sum(cac:TaxSubtotal/cbc:TaxAmount), 2)) or not(boolean(cac:TaxSubtotal))
+        (u:round(number(cbc:TaxAmount), 2) = u:round(sum(cac:TaxSubtotal/cbc:TaxAmount), 2)) or not(boolean(cac:TaxSubtotal))
     """,
     "BR-47": """
         u:exists(cac:TaxCategory[cac:TaxScheme/cbc:ID[normalize-space(u:upper_case(.))='VAT']]/cbc:ID)
@@ -1267,6 +1270,8 @@ ASSERT_REPLACE_MAP = {
         )
     )
     """,
+    "BR-29": "(u:exists(cbc:EndDate) and u:exists(cbc:StartDate) and u:compare_date(cbc:EndDate, '>=', cbc:StartDate)) or not(u:exists(cbc:StartDate)) or not(u:exists(cbc:EndDate))",
+    "BR-30": "(u:exists(cbc:EndDate) and u:exists(cbc:StartDate) and u:compare_date(cbc:EndDate, '>=', cbc:StartDate)) or not(u:exists(cbc:StartDate)) or not(u:exists(cbc:EndDate))",
     "BR-32": "u:exists(cac:TaxCategory[cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID))='VAT'])",
     "BR-37": "u:exists(cac:TaxCategory[cac:TaxScheme and u:upper_case(normalize-space(cac:TaxScheme/cbc:ID)) = 'VAT'])",
     "BR-56": "u:exists(cac:PartyTaxScheme[cac:TaxScheme and (normalize-space(u:upper_case(cac:TaxScheme/cbc:ID)) = 'VAT')]/cbc:CompanyID)",
