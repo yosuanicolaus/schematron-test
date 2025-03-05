@@ -1,0 +1,694 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Invoice xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>INV/2024/00272</cbc:ID>
+  <cbc:IssueDate>2024-12-31</cbc:IssueDate>
+  <cbc:DueDate>2025-01-10</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:DocumentCurrencyCode>DKK</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>Brian Simmelsgaard</cbc:BuyerReference>
+  <cac:OrderReference>
+    <cbc:ID>INV/2024/00272</cbc:ID>
+  </cac:OrderReference>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>INV_2024_00272.pdf</cbc:ID>
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2024_00272.pdf"></cbc:EmbeddedDocumentBinaryObject>
+    </cac:Attachment>
+  </cac:AdditionalDocumentReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0184">DK15363533</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>SikringsCenter Syd</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Tangevej 125</cbc:StreetName>
+        <cbc:CityName>Ribe</cbc:CityName>
+        <cbc:PostalZone>6760</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>DK15363533</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>SikringsCenter Syd</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="0184">DK15363533</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>SikringsCenter Syd</cbc:Name>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0088">5798005310259</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Kolding Kommune</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>By- og Udviklingsforvaltningen</cbc:StreetName>
+        <cbc:CityName> Kolding</cbc:CityName>
+        <cbc:PostalZone>6000 </cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>5798005310259</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>0088</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Kolding Kommune</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="0184">5798005310259</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Kolding Kommune</cbc:Name>
+        <cbc:Telephone>79791417</cbc:Telephone>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cac:DeliveryLocation>
+      <cac:Address>
+        <cbc:StreetName>By- og Udviklingsforvaltningen</cbc:StreetName>
+        <cbc:CityName> Kolding</cbc:CityName>
+        <cbc:PostalZone>6000 </cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:Address>
+    </cac:DeliveryLocation>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode name="unknown">1</cbc:PaymentMeansCode>
+    <cbc:PaymentID>INV/2024/00272</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>77800002089712</cbc:ID>
+      <cac:FinancialInstitutionBranch>
+        <cbc:ID>SKJBDK22</cbc:ID>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="DKK">7545.36</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="DKK">30181.29</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="DKK">7545.36</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="DKK">30181.29</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="DKK">30181.29</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="DKK">37726.65</cbc:TaxInclusiveAmount>
+    <cbc:PrepaidAmount currencyID="DKK">0.00</cbc:PrepaidAmount>
+    <cbc:PayableAmount currencyID="DKK">37726.65</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1952.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[ET01] Elektrikertimer Henrik N. Stenger</cbc:Description>
+      <cbc:Name>Elektrikertimer</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>ET01</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">488.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <!-- <cbc:ID>2</cbc:ID> -->
+    <!-- <cbc:InvoicedQuantity unitCode="C62">2.0</cbc:InvoicedQuantity> -->
+    <cbc:LineExtensionAmount currencyID="DKK">1590.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[ET02] Elektrikertimer (1.+2. time)</cbc:Description>
+      <cbc:Name>Elektrikertimer (1.+2. time)</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>ET02</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">795.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>3</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">3.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">2895.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[ET03] Elektrikertimer (3.+flere timer)</cbc:Description>
+      <cbc:Name>Elektrikertimer (3.+flere timer)</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>ET03</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">965.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>4</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">175.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[KØ01] Servicevogn &amp; kørsel 0-100 km</cbc:Description>
+      <cbc:Name>Servicevogn &amp; kørsel 0-100 km</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>KØ01</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">175.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>5</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">3948.48</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[5401010469] OMSKIFTER 1-0-2 200A 4 POL</cbc:Description>
+      <cbc:Name>OMSKIFTER 1-0-2 200A 4 POL</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>5401010469</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">3948.48</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>6</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">372.32</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[7821351863] AL/CU PINDBOLT AL 25MMý/CU-PIN Ø6</cbc:Description>
+      <cbc:Name>AL/CU PINDBOLT AL 25MMý/CU-PIN Ø6</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>7821351863</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">93.08</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>7</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1560.15</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[5412521114] CEE STIKDÅSE VÆG H6/400/32/7/44</cbc:Description>
+      <cbc:Name>CEE STIKDÅSE VÆG H6/400/32/7/44</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>5412521114</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">1560.15</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>8</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1509.32</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[5412523730] CEE STIKPROP  H6/400/32/7/44</cbc:Description>
+      <cbc:Name>CEE STIKPROP  H6/400/32/7/44</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>5412523730</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">1509.32</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>9</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1406.73</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[5412520445] CEE INDTAG VÆG H6/400/63/5/67</cbc:Description>
+      <cbc:Name>CEE INDTAG VÆG H6/400/63/5/67</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>5412520445</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">1406.73</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>10</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">3.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">185.58</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[825101346] SIKRING NH000 100A GG 500V</cbc:Description>
+      <cbc:Name>SIKRING NH000 100A GG 500V</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>825101346</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">61.86</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>11</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">45.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[G-099] Diverse hjælpematerialer</cbc:Description>
+      <cbc:Name>Diverse hjælpematerialer</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>G-099</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">45.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>12</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">10.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">892.60</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[7837990153] VAERK KABELSPYD - 2 KROGE 1,3M</cbc:Description>
+      <cbc:Name>VAERK KABELSPYD - 2 KROGE 1,3M</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>7837990153</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">89.26</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>13</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1952.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[ET01] Elektrikertimer Henrik N. Stenger</cbc:Description>
+      <cbc:Name>Elektrikertimer</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>ET01</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">488.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>14</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">8.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">3320.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[AM01] Arbejdsmandtimer (Hans)</cbc:Description>
+      <cbc:Name>Arbejdsmandtimer (Hans)</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>AM01</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">415.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>15</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">175.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[KØ01] Servicevogn &amp; kørsel 0-100 km</cbc:Description>
+      <cbc:Name>Servicevogn &amp; kørsel 0-100 km</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>KØ01</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">175.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>16</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">2.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">219.38</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[5421221984] JORDKLEMME SKRUE 10MM, GRØN/GUL</cbc:Description>
+      <cbc:Name>JORDKLEMME SKRUE 10MM, GRØN/GUL</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>5421221984</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">109.69</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>17</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">886.91</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[3419700040] GRUPPEAFBRYDER 3P+N  TYTAN 2</cbc:Description>
+      <cbc:Name>GRUPPEAFBRYDER 3P+N  TYTAN 2</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>3419700040</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">886.91</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>18</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">376.23</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[3419700367] SIKRINGSSKUFFE BLINK.25A TYTAN2</cbc:Description>
+      <cbc:Name>SIKRINGSSKUFFE BLINK.25A TYTAN2</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>3419700367</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">376.23</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>19</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">2.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">3994.18</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[3322098056] KOMBIAFB RCBO ICV40N 1PN C 10A 30</cbc:Description>
+      <cbc:Name>KOMBIAFB RCBO ICV40N 1PN C 10A 30</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>3322098056</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">1997.09</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>20</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">6.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">302.82</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[7821213820] GENNEMGANGSKLEMME UT10SL</cbc:Description>
+      <cbc:Name>GENNEMGANGSKLEMME UT10SL</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>7821213820</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">50.47</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>21</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">48.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1193.76</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[7821200053] GENNEMGANGSKLEMME UT4</cbc:Description>
+      <cbc:Name>GENNEMGANGSKLEMME UT4</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>7821200053</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">24.87</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>22</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">2.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">50.34</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[7821212274] GENNEMGANGSKLEMME UT4BU</cbc:Description>
+      <cbc:Name>GENNEMGANGSKLEMME UT4BU</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>7821212274</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">25.17</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>23</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">196.08</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[7821212287] JORDKLEMME UT 4-PE</cbc:Description>
+      <cbc:Name>JORDKLEMME UT 4-PE</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>7821212287</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">49.02</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>24</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">695.55</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[1017050123] OPUS74 STIKK DOB VAND 2P+J LG</cbc:Description>
+      <cbc:Name>OPUS74 STIKK DOB VAND 2P+J LG</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>1017050123</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">695.55</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>25</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">141.86</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[1017050479] OPUS74 UNDERLAG 2X1M VAND LG</cbc:Description>
+      <cbc:Name>OPUS74 UNDERLAG 2X1M VAND LG</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>1017050479</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">141.86</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>26</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">145.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[G-099] Diverse hjælpematerialer</cbc:Description>
+      <cbc:Name>Diverse hjælpematerialer</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>G-099</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">145.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

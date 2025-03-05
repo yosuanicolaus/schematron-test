@@ -59,6 +59,11 @@ utils_ns.prefix = "u"
 ################################################################################
 
 
+def odbg(path: str, **kwargs):
+    # For stress debugging with old approach
+    return elementpath.select(gxml, path, namespaces=gnsmap, variables=gvars, **kwargs)
+
+
 def cdbg(path: str, **kwargs):
     # For quick debugging
     return gxml.xpath(path, namespaces=gnsmap, **gvars, **kwargs)

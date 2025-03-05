@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Invoice xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>2025340</cbc:ID>
+  <cbc:IssueDate>2025-02-04</cbc:IssueDate>
+  <cbc:DueDate>2025-03-06</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>*Ref: 3870RUB*
+Account Holder: EUROPARC Federation
+Bank Name: Sparkasse Freyung-Grafenau
+Address: Freyunger Str. 5, D-94481 Grafenau / GERMANY
+VAT Number: DE286294031
+SWIFT Code:
+BYLADEM1FRG
+
+/Membership fees are exempt from VAT in accordance with §4 UStG (German VAT Act). /
+*/ Please state the invoice number/payment communication for your payment to be registered. /*</cbc:Note>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>0718-N-2019</cbc:BuyerReference>
+  <cac:OrderReference>
+    <cbc:ID>2025340</cbc:ID>
+  </cac:OrderReference>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>2025340.pdf</cbc:ID>
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="2025340.pdf">asdfz</cbc:EmbeddedDocumentBinaryObject>
+    </cac:Attachment>
+  </cac:AdditionalDocumentReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="9930">DE286294031</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>EUROPARC Federation</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Waffnergasse 6</cbc:StreetName>
+        <cbc:CityName>Regensburg</cbc:CityName>
+        <cbc:PostalZone>93047</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>DE286294031</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>EUROPARC Federation</cbc:RegistrationName>
+        <cbc:CompanyID>DE286294031</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>EUROPARC Federation</cbc:Name>
+        <cbc:Telephone>+49 941 59935980</cbc:Telephone>
+        <cbc:ElectronicMail>members.europarc@europarc.org</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0192">967311014</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>Reisa national park council</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Reisa National Park Fylkesmannen i Troms og Finnmark</cbc:StreetName>
+        <cbc:AdditionalStreetName>Fakturamottak DFØ, Postboks 4746 Torgarden, Trondheim</cbc:AdditionalStreetName>
+        <cbc:PostalZone>7468</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>NO</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>967311014</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>0192</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Reisa national park council</cbc:RegistrationName>
+        <cbc:CompanyID>967311014</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Reisa national park council</cbc:Name>
+        <cbc:Telephone>47 77 58 21 00</cbc:Telephone>
+        <cbc:ElectronicMail>reisa.nasjonalpark@statsforvalteren.no, halti@reisanasjonalpark.no, fmtrakb@statsforvalteren.no, reisa.nasjonalpark@fylkesmannen.no, fmtrrub@fylkesmannen.no, reisa.nasjonalpark@statsforvalteren.no</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2025-02-04</cbc:ActualDeliveryDate>
+    <cac:DeliveryLocation>
+      <cac:Address>
+        <cbc:StreetName>Reisa National Park Fylkesmannen i Troms og Finnmark</cbc:StreetName>
+        <cbc:AdditionalStreetName>Fakturamottak DFØ, Postboks 4746 Torgarden, Trondheim</cbc:AdditionalStreetName>
+        <cbc:PostalZone>7468</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>NO</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:Address>
+    </cac:DeliveryLocation>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode name="credit transfer">30</cbc:PaymentMeansCode>
+    <cbc:PaymentID>2025340</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>DE17740512300009185042</cbc:ID>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Payment terms: 30 Days</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">0.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">720.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">0.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>K</cbc:ID>
+        <cbc:Percent>0.0</cbc:Percent>
+        <cbc:TaxExemptionReasonCode>VATEX-EU-IC</cbc:TaxExemptionReasonCode>
+        <cbc:TaxExemptionReason>Intra-Community supply</cbc:TaxExemptionReason>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">720.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">720.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">720.00</cbc:TaxInclusiveAmount>
+    <cbc:PrepaidAmount currencyID="EUR">0.00</cbc:PrepaidAmount>
+    <cbc:PayableAmount currencyID="EUR">720.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">720.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>EUROPARC Membership Fee for Year 2025</cbc:Description>
+      <cbc:Name>EUROPARC Membership Fee for Year 2025</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>K</cbc:ID>
+        <cbc:Percent>0.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">720.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

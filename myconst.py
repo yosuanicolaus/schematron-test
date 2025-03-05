@@ -1202,27 +1202,43 @@ ASSERT_REPLACE_MAP = {
     "BR-S-08": """
     u:for_every(
         cbc:Percent,
-        \"u:if_else(
-            u:exists(//cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) or u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount),
+        \"(
             (
-              ../cbc:TaxableAmount - 1 < (
-                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                u:exists(//cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) or
+                u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+            )
+            and
+            (
+                ../cbc:TaxableAmount - 1 < (
+                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount)
+                    + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                    - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
                 )
-                and../cbc:TaxableAmount + 1 > (
-                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                and ../cbc:TaxableAmount + 1 > (
+                    sum(../../../cac:InvoiceLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount)
+                    + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                    - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
                 )
-            ),
-            u:if_else(
-                u:exists(//cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) or u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount),
-                (
-                  ../cbc:TaxableAmount - 1 < (
-                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
-                    )
-                    and../cbc:TaxableAmount + 1 > (
-                        sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount) - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
-                    )
-                ),
-                true()
+            )
+        )
+        or
+        (
+            (
+                u:exists(//cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.) = 'S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount) or
+                u:exists(//cac:AllowanceCharge[cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+            )
+            and
+            (
+                ../cbc:TaxableAmount - 1 < (
+                    sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount)
+                    + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                    - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                )
+                and ../cbc:TaxableAmount + 1 > (
+                    sum(../../../cac:CreditNoteLine[cac:Item/cac:ClassifiedTaxCategory/cbc:ID[normalize-space(.)='S'] and cac:Item/cac:ClassifiedTaxCategory/cbc:Percent = $VAR]/cbc:LineExtensionAmount)
+                    + sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='true'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                    - sum(../../../cac:AllowanceCharge[cbc:ChargeIndicator='false'][cac:TaxCategory/cbc:ID[normalize-space(.)='S'] and cac:TaxCategory/cbc:Percent = $VAR]/cbc:Amount)
+                )
             )
         )\"
     )
