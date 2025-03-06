@@ -93,6 +93,16 @@ def try_xpath(
         if compare and val != expected_val:
             if isinstance(expected_val, list) and len(expected_val) == 1 and expected_val[0] == val:
                 pass
+            elif (
+                isinstance(expected_val, list)
+                and len(expected_val) > 0
+                and isinstance(expected_val[0], str)
+                and isinstance(calc_val, list)
+                and len(calc_val) > 0
+                and isinstance(calc_val[0], _Element)
+                and _destructure_xpath_list(calc_val) == expected_val
+            ):
+                pass
             elif isinstance(expected_val, Decimal) and isinstance(val, float) and float(expected_val) == val:
                 pass
             else:
@@ -472,6 +482,37 @@ def xpath_u_string_join(_, elements: list[str] | list[_Element], joiner: str) ->
         return joiner.join(_destructure_xpath_list(elements))
 
 
+@utils_ns("replace")
+def xpath_u_replace(_, value: XPathObject, pattern: str, replacement: str) -> str:
+    value = _xpath_clean_value(value)
+    return value.replace(pattern, replacement)
+
+
+@utils_ns("xrechnung_verify_iban")
+def xpath_u_xrechnung_verify_iban(_, value: str) -> bool:
+    """
+    Translates the following complex XPath2 subquery found in `BR-DE-19` and `BR-DE-20`:
+        number(u:string_join(
+            for $cp in
+                string-to-codepoints(<concatted-iban-value>)
+            return
+                (if($cp > 64) then string($cp - 55) else string($cp - 48)),
+            ''
+            )
+        ) mod 97 = 1
+    """
+    codepoints = [ord(ch) for ch in value]
+    res_str_list: list[str] = []
+    for codepoint in codepoints:
+        if codepoint > 64:
+            res_str_list.append(str(codepoint - 55))
+        else:
+            res_str_list.append(str(codepoint - 48))
+
+    res_int = int("".join(res_str_list))
+    return res_int % 97 == 1
+
+
 ################################################################################
 # Elementpath Parser Functions (to be removed once done)
 ################################################################################
@@ -787,6 +828,10 @@ class ElementRule(Element):
                 _ = try_xpath(dummy_xml, test_str, self.namespaces, evars, False, "stress", assert_id, compare=False)
             pass
 
+        if not isinstance(meta_nodes, list):
+            print("skipped current context nodes, fix the context assert!")
+            return warning, fatal
+
         for context_node in meta_nodes:
             # If the rule has additional variable, we evaluate them here.
             ovars = ovars_dict.copy()
@@ -801,8 +846,8 @@ class ElementRule(Element):
                     times["var_old"] += time() - tt
                     ovars[name] = ovar_val
                     if isinstance(ovar_val, list) and len(ovar_val) > 1:
-                        print("ovar_val is a list!")
-                        ipdb.set_trace()
+                        print(f"ovar_val is a list! (name={name})")
+                        # ipdb.set_trace()
 
                     evar_val = try_xpath(context_node, evar_path, self.namespaces, evars, ovar_val, "var_meta", name)
                     evars[name] = evar_val

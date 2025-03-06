@@ -5,6 +5,7 @@ SCHEMATRON_PEPPOL_PATH = "validation/schematron/PEPPOL-EN16931-UBL.sch"
 SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
 SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
 SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
+SCHEMATRON_XRECHNUNG_PATH = "validation/schematron/XRechnung-UBL-validation.sch"
 
 
 class TestMapValue(TypedDict):
@@ -14,6 +15,7 @@ class TestMapValue(TypedDict):
 
 SPECIAL_FILE_SCHEMATRON: dict[str, list[str]] = {
     "nlcius": [SCHEMATRON_CEN_PATH, SCHEMATRON_NLCIUS_PATH],
+    "xrechnung": [SCHEMATRON_CEN_PATH, SCHEMATRON_XRECHNUNG_PATH],
     "eusr": [SCHEMATRON_EUSR_PATH],
     "tsr": [SCHEMATRON_TSR_PATH],
     "all": [SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH, SCHEMATRON_NLCIUS_PATH, SCHEMATRON_EUSR_PATH, SCHEMATRON_TSR_PATH],
@@ -39,6 +41,7 @@ PATH_ROOT_MAP = {
     SCHEMATRON_CEN_PATH: "CEN",
     SCHEMATRON_PEPPOL_PATH: "PEPPOL",
     SCHEMATRON_NLCIUS_PATH: "NLCIUS",
+    SCHEMATRON_XRECHNUNG_PATH: "XRECHNUNG",
     SCHEMATRON_EUSR_PATH: "EUSR",
     SCHEMATRON_TSR_PATH: "TSR",
 }
@@ -167,6 +170,9 @@ BR_CODE_08_PERCENT_RATE_ASSERT_MAP = {
 
 # Map of variable_name -> xpath1 query
 VARIABLE_REPLACE_MAP = {
+    ################################################################################
+    # PEPPOL
+    ################################################################################
     "profile": """
         u:if_else(
             /*/cbc:ProfileID and re:match(normalize-space(/*/cbc:ProfileID), 'urn:fdc:peppol.eu:2017:poacc:billing:([0-9]{2}):1.0'),
@@ -199,6 +205,11 @@ VARIABLE_REPLACE_MAP = {
     "supplierCountryIsNL": "(u:upper_case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
     "customerCountryIsNL": "(u:upper_case(normalize-space(/*/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
     "taxRepresentativeCountryIsNL": "(u:upper_case(normalize-space(/*/cac:TaxRepresentativeParty/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')",
+    ################################################################################
+    # XRECHNUNG
+    ################################################################################
+    "supportedVATCodes": "u:tokenize('S Z E AE K G L M', ' ')",
+    "supportedInvAndCNTypeCodes": "u:tokenize('326 380 384 389 381 875 876 877', ' ')",
     ################################################################################
     # Rule/Assert Level Variables
     ################################################################################
@@ -277,7 +288,7 @@ QUERY_CEN_CODE_INVOICELINE = {
 # To make it consistent, all to-be-translated query must be stripped and any multiple whiespaces must be replaced with a single whitespace
 QUERY_REPLACE_MAP = {
     ################################################################################
-    # CEN SCH Contexts
+    # CEN
     ################################################################################
     **QUERY_CEN_CODE_TAXTOTAL,
     **QUERY_CEN_CODE_ALLOWANCE_CHARGE_FALSE,
@@ -293,7 +304,7 @@ QUERY_REPLACE_MAP = {
     """,
     "//*[ends-with(name(), 'BinaryObject')]": "//*[substring(name(), string-length(name()) - 11) = 'BinaryObject']",
     ################################################################################
-    # PEPPOL SCH Contexts
+    # PEPPOL
     ################################################################################
     "//cac:PaymentMeans[some $code in tokenize('49 59', '\\s') satisfies normalize-space(cbc:PaymentMeansCode) = $code]": "//cac:PaymentMeans[contains(' 49 59 ', concat(' ', normalize-space(cbc:PaymentMeansCode), ' '))]",
     "//cac:AccountingSupplierParty/cac:Party[cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'SE' and cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2) = 'SE']": "//cac:AccountingSupplierParty/cac:Party[cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'SE' and cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT' and substring(cbc:CompanyID, 1, 2) = 'SE']]",
@@ -315,6 +326,17 @@ QUERY_REPLACE_MAP = {
         ] and 
         cbc:ID = 'S'
     ]
+    """,
+    ################################################################################
+    # XRECHNUNG
+    ################################################################################
+    "/ubl:Invoice/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = ('30','58')] | /cn:CreditNote/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = ('30','58')]": """
+        /ubl:Invoice/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = u:tokenize('30 58', ' ')] |
+        /cn:CreditNote/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = u:tokenize('30 58', ' ')]
+    """,
+    "/ubl:Invoice/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = ('48','54','55')] | /cn:CreditNote/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = ('48','54','55')]": """
+        /ubl:Invoice/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = u:tokenize('48 54 55', ' ')] |
+        /cn:CreditNote/cac:PaymentMeans[normalize-space(cbc:PaymentMeansCode) = u:tokenize('48 54 55', ' ')]
     """,
     ################################################################################
     # Duplicated Variable Names
@@ -1341,6 +1363,48 @@ ASSERT_REPLACE_MAP = {
     not(
         cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']
     )
+    """,
+    ################################################################################
+    # XRECHNUNG
+    ################################################################################
+    "BR-DE-16": """
+        (not(
+          ($BT-95-UBL-Inv = $supportedVATCodes or $BT-95-UBL-CN = $supportedVATCodes) or
+          ($BT-102 = $supportedVATCodes) or
+          ($BT-151 = $supportedVATCodes)
+        ) or
+        (cac:TaxRepresentativeParty or $BT-31orBT-32Path))
+    """,
+    "BR-DE-18": """
+    u:for_every(
+        u:tokenize(cac:PaymentTerms/cbc:Note[1], '(\\r?\\n)')[starts-with(normalize-space(.) , '#')],
+        "re:match (normalize-space($VAR), '(^|\\r?\\n)#(SKONTO)#TAGE=([0-9]+#PROZENT=[0-9]+\\.[0-9]{2})(#BASISBETRAG=-?[0-9]+\\.[0-9]{2})?#$') and
+         re:match (u:tokenize(cac:PaymentTerms/cbc:Note[1], '#.+#')[last()], '^\\s*\\n')"
+    )
+    """,
+    "BR-DE-27": "u:exists(re:match(normalize-space(cbc:Telephone), $XR-TELEPHONE-REGEX))",
+    "BR-DE-28": "u:exists(re:match(normalize-space(cbc:ElectronicMail), $XR-EMAIL-REGEX))",
+    "BR-DE-19": """
+        not(normalize-space(cbc:PaymentMeansCode) = '58') or
+        re:match(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')), '^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{0,30}$')
+        and u:xrechnung_verify_iban(
+            concat(
+                substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),5),
+                u:upper_case(substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),1,2)),
+                substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),3,2)
+            )
+        )
+    """,
+    "BR-DE-20": """
+        not(normalize-space(cbc:PaymentMeansCode) = '59') or
+        re:match(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')), '^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{0,30}$')
+        and u:xrechnung_verify_iban(
+            concat(
+                substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),5),
+                u:upper_case(substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),1,2)),
+                substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),3,2)
+            )
+        )
     """,
     ################################################################################
     # EUSR

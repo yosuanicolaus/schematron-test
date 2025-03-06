@@ -408,6 +408,37 @@ def xpath_u_string_join(_, elements: list[str] | list[_Element], joiner: str) ->
         return joiner.join(_destructure_xpath_list(elements))
 
 
+@utils_ns("replace")
+def xpath_u_replace(_, value: XPathObject, pattern: str, replacement: str) -> str:
+    value = _xpath_clean_value(value)
+    return value.replace(pattern, replacement)
+
+
+@utils_ns("xrechnung_verify_iban")
+def xpath_u_xrechnung_verify_iban(_, value: str) -> bool:
+    """
+    Translates the following complex XPath2 subquery found in `BR-DE-19` and `BR-DE-20`:
+        number(u:string_join(
+            for $cp in
+                string-to-codepoints(<concatted-iban-value>)
+            return
+                (if($cp > 64) then string($cp - 55) else string($cp - 48)),
+            ''
+            )
+        ) mod 97 = 1
+    """
+    codepoints = [ord(ch) for ch in value]
+    res_str_list: list[str] = []
+    for codepoint in codepoints:
+        if codepoint > 64:
+            res_str_list.append(str(codepoint - 55))
+        else:
+            res_str_list.append(str(codepoint - 48))
+
+    res_int = int("".join(res_str_list))
+    return res_int % 97 == 1
+
+
 ################################################################################
 # Main Logic
 ################################################################################
