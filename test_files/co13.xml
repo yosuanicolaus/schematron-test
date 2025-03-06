@@ -1,0 +1,237 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Invoice xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>INV/2025/00198</cbc:ID>
+  <cbc:IssueDate>2025-03-06</cbc:IssueDate>
+  <cbc:DueDate>2025-04-05</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>Algemene voorwaarden: https://www.aquaphor-waterfilters.be/terms [1]
+
+
+[1] https://www.aquaphor-waterfilters.be/terms</cbc:Note>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cac:OrderReference>
+    <cbc:ID>INV/2025/00198</cbc:ID>
+    <cbc:SalesOrderID>S00302</cbc:SalesOrderID>
+  </cac:OrderReference>
+  <cac:AdditionalDocumentReference>
+    <cbc:ID>INV_2025_00198.pdf</cbc:ID>
+    <cbc:IssueDate>2025-03-06</cbc:IssueDate>
+    <cac:Attachment>
+      <cbc:EmbeddedDocumentBinaryObject mimeCode="application/pdf" filename="INV_2025_00198.pdf">asdf</cbc:EmbeddedDocumentBinaryObject>
+    </cac:Attachment>
+  </cac:AdditionalDocumentReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0208">0798981872</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>AWater BV</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Kauwplasstraat 120</cbc:StreetName>
+        <cbc:CityName>Halen</cbc:CityName>
+        <cbc:PostalZone>3545</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>BE0798981872</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>AWater BV</cbc:RegistrationName>
+        <cbc:CompanyID>BE0798981872</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>AWater BV</cbc:Name>
+        <cbc:Telephone>+32471407313</cbc:Telephone>
+        <cbc:ElectronicMail>info@awater.be</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0208">0805009334</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>TANGO</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:StreetName>Sint-Paulusplaats 26</cbc:StreetName>
+        <cbc:CityName>Antwerpen</cbc:CityName>
+        <cbc:PostalZone>2000</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>BE0805009334</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>TANGO</cbc:RegistrationName>
+        <cbc:CompanyID>BE0805009334</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>TANGO</cbc:Name>
+        <cbc:ElectronicMail>contact@tangoantwerp.com</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2025-03-06</cbc:ActualDeliveryDate>
+    <cac:DeliveryLocation>
+      <cac:Address>
+        <cbc:StreetName>Sint-Paulusplaats 26</cbc:StreetName>
+        <cbc:CityName>Antwerpen</cbc:CityName>
+        <cbc:PostalZone>2000</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>BE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:Address>
+    </cac:DeliveryLocation>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode name="credit transfer">30</cbc:PaymentMeansCode>
+    <cbc:PaymentID>+++000/0003/01710+++</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>BE83734067163415</cbc:ID>
+      <cac:FinancialInstitutionBranch>
+        <cbc:ID>KREDBEBB</cbc:ID>
+      </cac:FinancialInstitutionBranch>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Betaalvoorwaarden: 30 dagen</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">133.64</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">636.36</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">133.64</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">636.35</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">636.36</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">770.00</cbc:TaxInclusiveAmount>
+    <cbc:PrepaidAmount currencyID="EUR">0.00</cbc:PrepaidAmount>
+    <cbc:PayableAmount currencyID="EUR">770.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">157.02</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description> Maintenance   Onderhoud 26/02/2025</cbc:Description>
+      <cbc:Name>Onderhoud</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">157.02</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">157.02</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[519511] Wisselpatroon B520 Pro-AS</cbc:Description>
+      <cbc:Name>Wisselpatroon B520 Pro-AS</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>519511</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">157.02</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>3</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">53.72</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[519725] Wisselpatroon B520-PP5</cbc:Description>
+      <cbc:Name>Wisselpatroon B520-PP5</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>519725</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">53.72</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>4</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">61.98</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>[500663] Aquaphor Wisselpatroon K7BM</cbc:Description>
+      <cbc:Name>Aquaphor Wisselpatroon K7BM</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>500663</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">61.98</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>5</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">206.61</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>Weekend urgent Intervention, general inspection, reparation  Weekend spoedinterventie, algemene inspectie, reparatie 16/02/2025</cbc:Description>
+      <cbc:Name>Weekend spoedinterventie, algemene inspectie, reparatie</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">206.61</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

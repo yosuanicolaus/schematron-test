@@ -1,6 +1,7 @@
 import logging
 import re
 import sys
+from os import listdir
 from time import time
 from typing import Generic, List, Optional, Tuple, TypeVar
 
@@ -40,6 +41,16 @@ _logger = logging.getLogger(__name__)
 
 
 def try_xpath(xml: _Element, path: str, namespaces: dict, variables: dict, schematron_vals: dict) -> XPathObject:
+    """
+    Run an XPath1 query on the XML and returns the result.
+    On error, an error message will be logged for further investigation.
+    :param xml: the XML _Element to run `xpath` on
+    :param path: the XPath1 query to run
+    :param namespaces: the namespaces to add into the `xpath` method
+    :param variables: the additional variables to add into the `xpath` method
+    :param schematron_vals: a dictionary reference with minimal format of {'errors`: <list>},
+                            to be filled with the error details.
+    """
     try:
         val = xml.xpath(path, namespaces=namespaces, **variables)
         return val
@@ -133,7 +144,7 @@ def _destructure_xpath_list(xpath_list_var: XPathList) -> list[str]:
 
 
 ################################################################################
-# LXML XPath Utility Methods from the Schematrons
+# LXML XPath Utility Methods required for the Peppol Schematron
 ################################################################################
 
 
@@ -254,6 +265,13 @@ def xpath_u_checkSEOrgnr(_, number: str):
 
 @utils_ns("for_every")
 def xpath_u_for_every(ctx, item_list: XPathList, condition_var: str):
+    """
+    Handles translating the complex ``every ... in ... satisfies ...`` XPath2 query.
+    The variable name is dropped and replaced with ``$VAR``, which will be injected with each item of the list.
+    For example:
+    XPath2: every $varname in $listname satisfies $varname = 42
+    XPath1: u:for_every($listname, "$VAR = 42")
+    """
     for item in item_list:
         res = ctx.context_node.xpath(condition_var, namespaces=GNSMAP, VAR=item)
         if not res:
@@ -262,16 +280,157 @@ def xpath_u_for_every(ctx, item_list: XPathList, condition_var: str):
     return True
 
 
-@utils_ns("id_SCH_EUSR_40")
-def xpath_u_id_SCH_EUSR_40(ctx):
+@utils_ns("if_else")
+def xpath_u_if_else(_, condition, then_clause, else_clause):
     """
-    Handles Assert SCH-EUSR-40:
-    every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']), $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry'])
-    satisfies count(
-        eusr:Subset[normalize-space(@type) ='PerEUC'][
-            every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry'])
-            satisfies normalize-space($euc) = normalize-space($steuc)
-        ]) = 1
+    Handles translating the complex ``if ... then ... else ...`` XPath2 query.
+    For example:
+    XPath2: if ($something) then (42) else (24)
+    XPath1: u:if($something, 42, 24)
+    """
+    if condition:
+        return then_clause
+    else:
+        return else_clause
+
+
+@utils_ns("castable")
+def xpath_u_castable(_, value: str, cast_type: str):
+    """
+    Handles translating the complex ``castable`` type check query in XPath2.
+    For example:
+    XPath2: $str castable as xs:date
+    XPath1: u:castable($str, 'date')
+    """
+    return elementpath.select(dummy_xml, f"'{value}' castable as xs:{cast_type}")
+
+
+@utils_ns("exists")
+def xpath_u_exists(_, value):
+    """Drop in replacement for the XPath2 ``exists`` method"""
+    return bool(value)
+
+
+@utils_ns("round")
+def xpath_u_round(_, value: float, precision: float):
+    """
+    Handles translating the complex round to 2 digit query in XPath2.
+    For example:
+    XPath2: (round($num * 10 * 10) div 100)
+    XPath1: u:round($num, 2)
+    """
+    if not value:
+        return 0
+    return round(value, int(precision))
+
+
+@utils_ns("upper_case")
+def xpath_u_upper_case(_, value):
+    """Drop in replacement for the XPath2 ``upper-case`` method"""
+    value = _xpath_clean_value(value)
+    return str(value).upper()
+
+
+@utils_ns("abs")
+def xpath_u_abs(_, value):
+    """Drop in replacement for the XPath2 ``max`` method"""
+    if not value:
+        return 0
+    strvalue = _xpath_clean_value(value)
+    try:
+        value = int(strvalue)
+    except ValueError:
+        value = float(strvalue)
+    return abs(value)
+
+
+@utils_ns("max")
+def xpath_u_max(_, value):
+    """Drop in replacement for the XPath2 ``max`` method"""
+    num_values = []
+    if isinstance(value, list):
+        for node in value:
+            num_values.append(float(node.text))
+    elif isinstance(value, int | float):
+        return value
+    return max(num_values) if num_values else 0
+
+
+@utils_ns("compare_date")
+def xpath_u_compare_date(_, date1, operator: str, date2):
+    """
+    Handles translating the date comparison query
+    For example:
+    XPath2: ``xs:date($date1) < xs:date($date2)``
+    XPath1: ``u:compare_date($date1, '<', $date2)``
+    param str operator: Either '<', '>', '<=', or '>='. If not any of them, this method will return False.
+    """
+    date1 = _xpath_clean_value(date1)
+    date2 = _xpath_clean_value(date2)
+    match operator:
+        case "<":
+            return date1 < date2
+        case "<=":
+            return date1 <= date2
+        case ">":
+            return date1 > date2
+        case ">=":
+            return date1 >= date2
+        case _:
+            return False
+
+
+@utils_ns("tokenize")
+def xpath_u_tokenize(_, value, delimiter: str) -> XPathList:
+    """
+    Drop-in replacement for the XPath2 `tokenize` method.
+    Returns an ``XPathList`` (or ``list[_Element]``) object.
+    For example:
+    XPath2: tokenize('1 3 5', ' ')
+    XPath1: u:tokenize('1 3 5', ' ')
+    """
+    str_value = _xpath_clean_value(value)
+    if not str_value:
+        return []
+    return _make_xpath_list(str_value.split(delimiter))
+
+
+@utils_ns("string_join")
+def xpath_u_string_join(_, elements: list[str] | list[_Element], joiner: str) -> str:
+    """Drop-in replacement for the XPath2 ``sting-join`` method."""
+    if not elements:
+        return ""
+    elif isinstance(elements[0], str):
+        # `elements` are list[str]
+        return joiner.join(elements)
+    else:
+        # `elements` are list[_Element]
+        return joiner.join(_destructure_xpath_list(elements))
+
+
+@utils_ns("replace")
+def xpath_u_replace(_, value: XPathObject, pattern: str, replacement: str) -> str:
+    """Drop-in replacement for the XPath2 ``replace`` method."""
+    value = _xpath_clean_value(value)
+    return value.replace(pattern, replacement)
+
+
+################################################################################
+# LXML XPath Complex Query Helper Methods
+################################################################################
+
+
+@utils_ns("id_SCH_EUSR_40")
+def xpath_u_id_sch_eusr_40(ctx):
+    """
+    Handles assert ``SCH-EUSR-40``:
+        every $st in (eusr:Subset[normalize-space(@type) = 'PerEUC']),
+              $steuc in ($st/eusr:Key[normalize-space(@schemeID) = 'EndUserCountry'])
+        satisfies count(
+            eusr:Subset[normalize-space(@type) ='PerEUC'][
+                every $euc in (eusr:Key[normalize-space(@schemeID) = 'EndUserCountry'])
+                satisfies normalize-space($euc) = normalize-space($steuc)
+            ]) = 1
     """
     subset_nodes = ctx.context_node.xpath("eusr:Subset[normalize-space(@type) = 'PerEUC']", namespaces=GNSMAP)
 
@@ -298,126 +457,10 @@ def xpath_u_id_SCH_EUSR_40(ctx):
     return True
 
 
-@utils_ns("if_else")
-def xpath_u_if_else(_, condition, then_clause, else_clause):
-    if condition:
-        return then_clause
-    else:
-        return else_clause
-
-
-@utils_ns("castable")
-def xpath_u_castable(_, value: str, cast_type: str):
-    return elementpath.select(dummy_xml, f"'{value}' castable as xs:{cast_type}")
-
-
-@utils_ns("exists")
-def xpath_u_exists(_, value):
-    return bool(value)
-
-
-@utils_ns("round")
-def xpath_u_round(_, value: float, precision: float):
-    if not value:
-        return 0
-    return round(value, int(precision))
-
-
-@utils_ns("upper_case")
-def xpath_u_upper_case(_, value):
-    value = _xpath_clean_value(value)
-    return str(value).upper()
-
-
-@utils_ns("abs")
-def xpath_u_abs(_, value):
-    if not value:
-        return 0
-    strvalue = _xpath_clean_value(value)
-    try:
-        value = int(strvalue)
-    except ValueError:
-        value = float(strvalue)
-    return abs(value)
-
-
-@utils_ns("int")
-def xpath_u_int(_, value):
-    return int(value)
-
-
-@utils_ns("max")
-def xpath_u_max(_, value):
-    num_values = []
-    if isinstance(value, list):
-        for node in value:
-            num_values.append(float(node.text))
-    elif isinstance(value, int | float):
-        return value
-    return max(num_values) if num_values else 0
-
-
-@utils_ns("tokenize_and_index")
-def xpath_u_tokenize_and_index(_, text, delimiter, index):
-    if not text:
-        return ""
-    try:
-        tokens = text.split(delimiter)
-        return tokens[int(index) - 1] if 0 < int(index) <= len(tokens) else ""  # Handle out-of-bounds
-    except (ValueError, IndexError):
-        return ""  # Handle invalid index or split errors
-
-
-@utils_ns("compare_date")
-def xpath_u_compare_date(_, date1, operator: str, date2):
-    """
-    param str operator: Either '<', '>', '<=', or '>='. If not any of them, this method will return False.
-    """
-    date1 = _xpath_clean_value(date1)
-    date2 = _xpath_clean_value(date2)
-    match operator:
-        case "<":
-            return date1 < date2
-        case "<=":
-            return date1 <= date2
-        case ">":
-            return date1 > date2
-        case ">=":
-            return date1 >= date2
-        case _:
-            return False
-
-
-@utils_ns("tokenize")
-def xpath_u_tokenize(_, value, delimiter: str):
-    str_value = _xpath_clean_value(value)
-    if not str_value:
-        return []
-    return _make_xpath_list(str_value.split(delimiter))
-
-
-@utils_ns("string_join")
-def xpath_u_string_join(_, elements: list[str] | list[_Element], joiner: str) -> str:
-    if not elements:
-        return ""
-    elif isinstance(elements[0], str):
-        # elements is list[str]
-        return joiner.join(elements)
-    else:
-        # elements is list[_Element]
-        return joiner.join(_destructure_xpath_list(elements))
-
-
-@utils_ns("replace")
-def xpath_u_replace(_, value: XPathObject, pattern: str, replacement: str) -> str:
-    value = _xpath_clean_value(value)
-    return value.replace(pattern, replacement)
-
-
 @utils_ns("xrechnung_verify_iban")
 def xpath_u_xrechnung_verify_iban(_, value: str) -> bool:
     """
-    Translates the following complex XPath2 subquery found in `BR-DE-19` and `BR-DE-20`:
+    Handles complex XPath2 subquery in assert ``BR-DE-19`` and ``BR-DE-20``:
         number(u:string_join(
             for $cp in
                 string-to-codepoints(<concatted-iban-value>)
@@ -623,8 +666,8 @@ class ElementRule(Element):
 ################################################################################
 
 
-def run_schematron():
-    test_file_path, schematron_paths = get_file_and_schematron_paths(sys.argv[1:])
+def blaze(args: list[str]):
+    test_file_path, schematron_paths = get_file_and_schematron_paths(args)
     errors_to_email = {}
 
     for schematron_path in schematron_paths:
@@ -660,12 +703,20 @@ def run_schematron():
 
 
 def main():
-    if len(sys.argv) > 2:
-        global stress_mode
-        stress_mode = sys.argv[2].upper()
-
     tt = time()
-    run_schematron()
+    if sys.argv[1].upper() == "CRAZY":
+        # TEST EVERYTHING! You heard that... EVERYTHING!!!
+        all_files = listdir("test_files")
+        for file in all_files:
+            if ".xml" not in file:
+                continue
+            file = file.replace(".xml", "")
+            if len(sys.argv) > 2 and sys.argv[2].upper() == "ALL":
+                blaze([file, "all"])
+            else:
+                blaze([file])
+    else:
+        blaze(sys.argv[1:])
     pprint(time() - tt)
 
 

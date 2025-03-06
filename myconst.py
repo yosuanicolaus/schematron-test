@@ -22,6 +22,7 @@ SPECIAL_FILE_SCHEMATRON: dict[str, list[str]] = {
     "justcen": [SCHEMATRON_CEN_PATH],
     "justpeppol": [SCHEMATRON_PEPPOL_PATH],
     "justnlcius": [SCHEMATRON_NLCIUS_PATH],
+    "justxrechnung": [SCHEMATRON_XRECHNUNG_PATH],
 }
 
 
@@ -32,7 +33,7 @@ def get_file_and_schematron_paths(args: list[str]) -> tuple[str, list[str]]:
     if len(args) >= 2:
         schematron_paths = SPECIAL_FILE_SCHEMATRON[args[1]]
     else:
-        schematron_paths = SPECIAL_FILE_SCHEMATRON.get(arg, [SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH])
+        schematron_paths = SPECIAL_FILE_SCHEMATRON.get(arg, [SCHEMATRON_CEN_PATH])
 
     return file_path, schematron_paths
 
@@ -176,7 +177,7 @@ VARIABLE_REPLACE_MAP = {
     "profile": """
         u:if_else(
             /*/cbc:ProfileID and re:match(normalize-space(/*/cbc:ProfileID), 'urn:fdc:peppol.eu:2017:poacc:billing:([0-9]{2}):1.0'),
-            u:tokenize_and_index(normalize-space(/*/cbc:ProfileID), ':', 7),
+            u:tokenize(normalize-space(/*/cbc:ProfileID), ':')[7],
             'Unknown'
         )
     """,

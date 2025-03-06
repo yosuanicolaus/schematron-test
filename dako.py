@@ -3,22 +3,31 @@ from time import time
 
 from lxml import etree
 from rich.pretty import pprint
-
-from myconst import get_file_and_schematron_paths
 from saxonche import PySaxonProcessor
 
+from myconst import (
+    SCHEMATRON_CEN_PATH,
+    SCHEMATRON_EUSR_PATH,
+    SCHEMATRON_NLCIUS_PATH,
+    SCHEMATRON_PEPPOL_PATH,
+    SCHEMATRON_TSR_PATH,
+    SCHEMATRON_XRECHNUNG_PATH,
+    get_file_and_schematron_paths,
+)
+
 SCHEMATRON_STYLESHEET_MAP = {
-    "validation/schematron/CEN-EN16931-UBL.sch": "./validation/saxonche/cen.xsl",
-    "validation/schematron/PEPPOL-EN16931-UBL.sch": "./validation/saxonche/peppol.xsl",
-    "validation/schematron/SI-UBL-2.0.sch": "./validation/saxonche/peppol.xsl",
-    "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch": "./validation/saxonche/peppol.xsl",
-    "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch": "./validation/saxonche/peppol.xsl",
+    SCHEMATRON_CEN_PATH: "./validation/saxonche/cen.xsl",
+    SCHEMATRON_PEPPOL_PATH: "./validation/saxonche/peppol.xsl",
+    SCHEMATRON_NLCIUS_PATH: "./validation/saxonche/nlcius.xsl",
+    SCHEMATRON_EUSR_PATH: "./validation/saxonche/eusr.xsl",
+    SCHEMATRON_TSR_PATH: "./validation/saxonche/tsr.xsl",
+    SCHEMATRON_XRECHNUNG_PATH: "./validation/saxonche/cen.xsl",  # TODO: add xrechnung.xsl if we can find it
 }
 
 STYLESHEET_NAME_MAP = {}
 
 
-def saxonche():
+def main():
     tt = time()
 
     source_file, schematrons = get_file_and_schematron_paths(sys.argv[1:])
@@ -29,12 +38,9 @@ def saxonche():
         for schematron_path in schematrons:
             compiled_sch = xsltproc.compile_stylesheet(stylesheet_file=SCHEMATRON_STYLESHEET_MAP[schematron_path])
             stylesheets.append(compiled_sch)
-        # peppol_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/peppol.xsl")
-        # cen_sch = xsltproc.compile_stylesheet(stylesheet_file="./validation/saxonche/cen.xsl")
 
     with PySaxonProcessor(license=False):
         for sch in stylesheets:
-            print(f"Running {'CEN' if sch == cen_sch else 'PEPPOL'}")
             output = sch.transform_to_string(source_file=source_file)
             svrl = etree.fromstring(output.encode()).getroottree()
             warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
@@ -47,5 +53,5 @@ def saxonche():
     print(time() - tt)
 
 
-def main():
-    saxonche()
+if __name__ == "__main__":
+    main()
