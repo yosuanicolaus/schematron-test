@@ -169,6 +169,53 @@ BR_CODE_08_PERCENT_RATE_ASSERT_MAP = {
 }
 
 
+DE_COMMON_RULES = {
+    "16": """
+        (not(
+          ($BT-95-UBL-Inv = $supportedVATCodes or $BT-95-UBL-CN = $supportedVATCodes) or
+          ($BT-102 = $supportedVATCodes) or
+          ($BT-151 = $supportedVATCodes)
+        ) or
+        (cac:TaxRepresentativeParty or $BT-31orBT-32Path))
+    """,
+    "18": """
+    u:for_every(
+        u:tokenize(cac:PaymentTerms/cbc:Note[1], '(\\r?\\n)')[starts-with(normalize-space(.) , '#')],
+        "re:match (normalize-space($VAR), '(^|\\r?\\n)#(SKONTO)#TAGE=([0-9]+#PROZENT=[0-9]+\\.[0-9]{2})(#BASISBETRAG=-?[0-9]+\\.[0-9]{2})?#$') and
+         re:match (u:tokenize(cac:PaymentTerms/cbc:Note[1], '#.+#')[last()], '^\\s*\\n')"
+    )
+    """,
+    "19": """
+        not(normalize-space(cbc:PaymentMeansCode) = '58') or
+        re:match(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')), '^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{0,30}$')
+        and u:xrechnung_verify_iban(
+            concat(
+                substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),5),
+                u:upper_case(substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),1,2)),
+                substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),3,2)
+            )
+        )
+    """,
+    "20": """
+        not(normalize-space(cbc:PaymentMeansCode) = '59') or
+        re:match(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')), '^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{0,30}$')
+        and u:xrechnung_verify_iban(
+            concat(
+                substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),5),
+                u:upper_case(substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),1,2)),
+                substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),3,2)
+            )
+        )
+    """,
+    "27": "u:exists(re:match(normalize-space(cbc:Telephone), $XR-TELEPHONE-REGEX))",
+    "28": "u:exists(re:match(normalize-space(cbc:ElectronicMail), $XR-EMAIL-REGEX))",
+}
+
+
+DE_PEPPOL_RULES = {f"DE-R-0{de_code}": de_rule for de_code, de_rule in DE_COMMON_RULES.items()}
+DE_XRECHNUNG_RULES = {f"BR-DE-{de_code}": de_rule for de_code, de_rule in DE_COMMON_RULES.items()}
+
+
 # Map of variable_name -> xpath1 query
 VARIABLE_REPLACE_MAP = {
     ################################################################################
@@ -327,6 +374,47 @@ QUERY_REPLACE_MAP = {
         ] and 
         cbc:ID = 'S'
     ]
+    """,
+    # Peppol German Contexts
+    "//(/ubl-invoice:Invoice | /ubl-creditnote:CreditNote)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote[$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:AccountingSupplierParty | /ubl-creditnote:CreditNote/cac:AccountingSupplierParty)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:AccountingSupplierParty[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:AccountingSupplierParty[$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress | /ubl-creditnote:CreditNote/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress[$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:AccountingSupplierParty/cac:Party/cac:Contact | /ubl-creditnote:CreditNote/cac:AccountingSupplierParty/cac:Party/cac:Contact)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:AccountingSupplierParty/cac:Party/cac:Contact[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:AccountingSupplierParty/cac:Party/cac:Contact[$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress | /ubl-creditnote:CreditNote/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress[$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address | /ubl-creditnote:CreditNote/cac:Delivery/cac:DeliveryLocation/cac:Address)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:Delivery/cac:DeliveryLocation/cac:Address[$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:PaymentMeans[cbc:PaymentMeansCode = (30,58)] | /ubl-creditnote:CreditNote/cac:PaymentMeans[cbc:PaymentMeansCode = (30,58)])[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:PaymentMeans[cbc:PaymentMeansCode = 30 or cbc:PaymentMeansCode = 58][$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:PaymentMeans[cbc:PaymentMeansCode = 30 or cbc:PaymentMeansCode = 58][$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:PaymentMeans[cbc:PaymentMeansCode = (48,54,55)] | /ubl-creditnote:CreditNote/cac:PaymentMeans[cbc:PaymentMeansCode = (48,54,55)])[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:PaymentMeans[contains(' 48 54 55 ', concat(' ', cbc:PaymentMeansCode, ' '))][$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:PaymentMeans[contains(' 48 54 55 ', concat(' ', cbc:PaymentMeansCode, ' '))][$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:PaymentMeans[cbc:PaymentMeansCode = 59] | /ubl-creditnote:CreditNote/cac:PaymentMeans[cbc:PaymentMeansCode = 59])[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:PaymentMeans[cbc:PaymentMeansCode = 59][$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:PaymentMeans[cbc:PaymentMeansCode = 59][$supplierCountryIsDE and $customerCountryIsDE]
+    """,
+    "//(/ubl-invoice:Invoice/cac:TaxTotal/cac:TaxSubtotal | /ubl-creditnote:CreditNote/cac:TaxTotal/cac:TaxSubtotal)[$supplierCountryIsDE and $customerCountryIsDE]": """
+        //ubl-invoice:Invoice/cac:TaxTotal/cac:TaxSubtotal[$supplierCountryIsDE and $customerCountryIsDE] |
+        //ubl-creditnote:CreditNote/cac:TaxTotal/cac:TaxSubtotal[$supplierCountryIsDE and $customerCountryIsDE]
     """,
     ################################################################################
     # XRECHNUNG
@@ -1327,7 +1415,7 @@ ASSERT_REPLACE_MAP = {
     "PEPPOL-EN16931-P0100": "$profile != '01' or contains(' 71 80 82 84 102 218 219 331 380 382 383 386 388 393 395 553 575 623 780 817 870 875 876 877 ', concat(' ', normalize-space(text()), ' '))",
     "PEPPOL-EN16931-CL008": f"contains('{PEPPOL_CONST_EAID}', concat(' ', @schemeID, ' '))",
     "PEPPOL-EN16931-F001": "string-length(text()) = 10 and u:castable(string(.), 'date')",
-    "PEPPOL-EN16931-R040": "not(cbc:MultiplierFactorNumeric and cbc:BaseAmount) or u:slack(u:if_else(cbc:Amount, cbc:Amount, 0), (number(cbc:BaseAmount) * number(cbc:MultiplierFactorNumeric)) div 100, 0.02)",
+    "PEPPOL-EN16931-R040": "not(cbc:MultiplierFactorNumeric and cbc:BaseAmount) or u:slack(u:if_else(cbc:Amount, number(cbc:Amount), 0), (number(cbc:BaseAmount) * number(cbc:MultiplierFactorNumeric)) div 100, 0.02)",
     "PEPPOL-EN16931-R110": "u:compare_date(text(), '>=' ,../../../cac:InvoicePeriod/cbc:StartDate)",
     "PEPPOL-EN16931-R111": "u:compare_date(text(), '<=' ,../../../cac:InvoicePeriod/cbc:EndDate)",
     "NO-R-001": """
@@ -1365,48 +1453,11 @@ ASSERT_REPLACE_MAP = {
         cac:AdditionalDocumentReference[cbc:DocumentDescription = 'EINDAGI']
     )
     """,
+    **DE_PEPPOL_RULES,
     ################################################################################
     # XRECHNUNG
     ################################################################################
-    "BR-DE-16": """
-        (not(
-          ($BT-95-UBL-Inv = $supportedVATCodes or $BT-95-UBL-CN = $supportedVATCodes) or
-          ($BT-102 = $supportedVATCodes) or
-          ($BT-151 = $supportedVATCodes)
-        ) or
-        (cac:TaxRepresentativeParty or $BT-31orBT-32Path))
-    """,
-    "BR-DE-18": """
-    u:for_every(
-        u:tokenize(cac:PaymentTerms/cbc:Note[1], '(\\r?\\n)')[starts-with(normalize-space(.) , '#')],
-        "re:match (normalize-space($VAR), '(^|\\r?\\n)#(SKONTO)#TAGE=([0-9]+#PROZENT=[0-9]+\\.[0-9]{2})(#BASISBETRAG=-?[0-9]+\\.[0-9]{2})?#$') and
-         re:match (u:tokenize(cac:PaymentTerms/cbc:Note[1], '#.+#')[last()], '^\\s*\\n')"
-    )
-    """,
-    "BR-DE-27": "u:exists(re:match(normalize-space(cbc:Telephone), $XR-TELEPHONE-REGEX))",
-    "BR-DE-28": "u:exists(re:match(normalize-space(cbc:ElectronicMail), $XR-EMAIL-REGEX))",
-    "BR-DE-19": """
-        not(normalize-space(cbc:PaymentMeansCode) = '58') or
-        re:match(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')), '^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{0,30}$')
-        and u:xrechnung_verify_iban(
-            concat(
-                substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),5),
-                u:upper_case(substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),1,2)),
-                substring(normalize-space(u:replace(cac:PayeeFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),3,2)
-            )
-        )
-    """,
-    "BR-DE-20": """
-        not(normalize-space(cbc:PaymentMeansCode) = '59') or
-        re:match(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')), '^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{0,30}$')
-        and u:xrechnung_verify_iban(
-            concat(
-                substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),5),
-                u:upper_case(substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),1,2)),
-                substring(normalize-space(u:replace(cac:PaymentMandate/cac:PayerFinancialAccount/cbc:ID, '([ \\n\\r\\t\\s])', '')),3,2)
-            )
-        )
-    """,
+    **DE_XRECHNUNG_RULES,
     ################################################################################
     # EUSR
     ################################################################################

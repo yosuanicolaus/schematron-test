@@ -887,6 +887,10 @@ class ElementRule(Element):
 
             for assert_id, flag, selector, message in self._assertions:
                 gid = assert_id
+                if assert_id == "PEPPOL-EN16931-R040":
+                    # bug on old.py - if you run `xrech2` on peppol schematron (`justpeppol`)
+                    new_path = selector.path.replace("then cbc:Amount", "then xs:decimal(cbc:Amount)")
+                    selector = elementpath.Selector(new_path, namespaces=selector.namespaces, parser=parser)
                 tt = time()
                 expected = selector.select(xml, item=context_node, variables=ovars)
                 times["assert_old"] += time() - tt
