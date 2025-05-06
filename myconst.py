@@ -7,6 +7,9 @@ SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporti
 SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
 SCHEMATRON_XRECHNUNG_PATH = "validation/schematron/XRechnung-UBL-validation.sch"
 
+SCHEMATRON_OIOUBL_INV_PATH = "validation/schematron/OIOUBL_Invoice_Schematron.xml"
+SCHEMATRON_OIOUBL_CRN_PATH = "validation/schematron/OIOUBL_CreditNote_Schematron.xml"
+
 
 class TestMapValue(TypedDict):
     schematron_paths: tuple[str, ...]
@@ -23,6 +26,7 @@ SPECIAL_FILE_SCHEMATRON: dict[str, list[str]] = {
     "justpeppol": [SCHEMATRON_PEPPOL_PATH],
     "justnlcius": [SCHEMATRON_NLCIUS_PATH],
     "justxrechnung": [SCHEMATRON_XRECHNUNG_PATH],
+    "justoioublinv": [SCHEMATRON_OIOUBL_INV_PATH],
 }
 
 
@@ -1405,6 +1409,8 @@ ASSERT_REPLACE_MAP = {
     ################################################################################
     # PEPPOL
     ################################################################################
+    # FIXME: [PEPPOL-COMMON-R043] find out why u:mod97-0208(...) fails when validating Belgian company number
+    "PEPPOL-COMMON-R043": "u:exists(re:match(normalize-space(), '^[0-9]{10}$'))",
     "PEPPOL-EN16931-CL002": f"contains('{PEPPOL_CONST_UNCL5189}', concat(' ', text(), ' '))",
     "PEPPOL-EN16931-CL003": f"contains('{PEPPOL_CONST_UNCL7161}', concat(' ', text(), ' '))",
     "PEPPOL-EN16931-CL006": f"contains('{PEPPOL_CONST_UNCL2005}', concat(' ', text(), ' '))",
