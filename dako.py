@@ -1,11 +1,14 @@
 import sys
 from time import time
+from typing import Any
 
 from lxml import etree
 from rich.pretty import pprint
 from saxonche import PySaxonProcessor
 
-from myconst import (
+from schematron_lxml_const import (
+    SCHEMATRON_AUNZ_1_PATH,
+    SCHEMATRON_AUNZ_2_PATH,
     SCHEMATRON_CEN_PATH,
     SCHEMATRON_EUSR_PATH,
     SCHEMATRON_NLCIUS_PATH,
@@ -22,6 +25,8 @@ SCHEMATRON_STYLESHEET_MAP = {
     SCHEMATRON_EUSR_PATH: "./validation/saxonche/eusr.xsl",
     SCHEMATRON_TSR_PATH: "./validation/saxonche/tsr.xsl",
     SCHEMATRON_XRECHNUNG_PATH: "./validation/saxonche/cen.xsl",  # TODO: add xrechnung.xsl if we can find it
+    SCHEMATRON_AUNZ_1_PATH: "./validation/saxonche/pintau1.xslt",
+    SCHEMATRON_AUNZ_2_PATH: "./validation/saxonche/pintau2.xslt",
 }
 
 STYLESHEET_NAME_MAP = {}
@@ -31,24 +36,27 @@ def main():
     tt = time()
 
     source_file, schematrons = get_file_and_schematron_paths(sys.argv[1:])
-    stylesheets: list = []
+    stylesheets: list[tuple[str, Any]] = []
 
     with PySaxonProcessor(license=False) as proc:
         xsltproc = proc.new_xslt30_processor()
         for schematron_path in schematrons:
             compiled_sch = xsltproc.compile_stylesheet(stylesheet_file=SCHEMATRON_STYLESHEET_MAP[schematron_path])
-            stylesheets.append(compiled_sch)
+            stylesheets.append((schematron_path, compiled_sch))
 
     with PySaxonProcessor(license=False):
-        for sch in stylesheets:
+        print("=" * 80)
+        for sch_path, sch in stylesheets:
+            print("Running", sch_path)
             output = sch.transform_to_string(source_file=source_file)
             svrl = etree.fromstring(output.encode()).getroottree()
-            warning = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="warning"]')]
-            fatal = [elem.findtext("{*}text") for elem in svrl.findall('//{*}failed-assert[@flag="fatal"]')]
+            warning = [elem.findtext("{*}text") for elem in svrl.findall('.//{*}failed-assert[@flag="warning"]')]
+            fatal = [elem.findtext("{*}text") for elem in svrl.findall('.//{*}failed-assert[@flag="fatal"]')]
             print("Warning:")
             pprint(warning)
             print("Fatal:")
             pprint(fatal)
+            print("=" * 80)
 
     print(time() - tt)
 

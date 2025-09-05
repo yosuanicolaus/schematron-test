@@ -7,7 +7,7 @@ from elementpath.xpath3 import XPath3Parser
 from lxml import etree
 from rich.pretty import pprint
 
-from myconst import get_file_and_schematron_paths
+from .schematron_lxml_const import get_file_and_schematron_paths
 
 # This parser is modified to be able to add the functions
 custom_parser = elementpath.XPath2Parser

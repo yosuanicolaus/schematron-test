@@ -6,7 +6,7 @@ import elementpath
 from lxml import etree
 from rich.pretty import pprint
 
-from myconst import get_file_and_schematron_paths
+from .schematron_lxml_const import get_file_and_schematron_paths
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})

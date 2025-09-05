@@ -9,7 +9,7 @@ from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
 
-from myconst import INVOICE_LINE_TAG, PATH_ROOT_MAP, TEST_MAP
+from .schematron_lxml_const import INVOICE_LINE_TAG, PATH_ROOT_MAP, TEST_MAP
 
 parser = elementpath.XPath2Parser
 parser.DEFAULT_NAMESPACES.update({"u": "utils"})

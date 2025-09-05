@@ -10,7 +10,7 @@ from lxml import etree
 from lxml.etree import _Element
 from rich.pretty import pprint
 
-from myconst import (
+from .schematron_lxml_const import (
     ASSERT_REPLACE_MAP,
     GNSMAP,
     PATH_ROOT_MAP,
