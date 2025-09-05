@@ -6,10 +6,10 @@ SCHEMATRON_NLCIUS_PATH = "validation/schematron/SI-UBL-2.0.sch"
 SCHEMATRON_EUSR_PATH = "validation/schematron/peppol-end-user-statistics-reporting-1.1.4.sch"
 SCHEMATRON_TSR_PATH = "validation/schematron/peppol-transaction-statistics-reporting-1.0.4.sch"
 SCHEMATRON_XRECHNUNG_PATH = "validation/schematron/XRechnung-UBL-validation.sch"
-SCHEMATRON_AUNZ_1_PATH = "validation/schematron/PINT-jurisdiction-aligned-rules.sch"
-SCHEMATRON_AUNZ_2_PATH = "validation/schematron/PINT-UBL-validation-preprocessed.sch"
+SCHEMATRON_PINT_COMMON_PATH = "validation/schematron/PINT-UBL-validation-preprocessed.sch"
+SCHEMATRON_PINT_AUNZ_PATH = "validation/schematron/PINT-jurisdiction-aligned-rules.sch"
 SCHEMATRON_OIOUBL_INV_PATH = "validation/schematron/OIOUBL_Invoice_Schematron.xml"
-SCHEMATRON_OIOUBL_CRN_PATH = "validation/schematron/OIOUBL_CreditNote_Schematron.xml"
+SCHEMATRON_OIOUBL_CN_PATH = "validation/schematron/OIOUBL_CreditNote_Schematron.xml"
 
 
 class TestMapValue(TypedDict):
@@ -18,7 +18,7 @@ class TestMapValue(TypedDict):
 
 
 SPECIAL_FILE_SCHEMATRON: dict[str, list[str]] = {
-    "aunz": [SCHEMATRON_AUNZ_1_PATH, SCHEMATRON_AUNZ_2_PATH],
+    "aunz": [SCHEMATRON_PINT_AUNZ_PATH, SCHEMATRON_PINT_COMMON_PATH],
     "peppol": [SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH],
     "nlcius": [SCHEMATRON_CEN_PATH, SCHEMATRON_NLCIUS_PATH],
     "xrechnung": [SCHEMATRON_CEN_PATH, SCHEMATRON_XRECHNUNG_PATH],
@@ -32,15 +32,27 @@ SPECIAL_FILE_SCHEMATRON: dict[str, list[str]] = {
     "justoioublinv": [SCHEMATRON_OIOUBL_INV_PATH],
 }
 
+FOLDER_SCHEMATRON: dict[str, list[str]] = {
+    "cen_peppol": [SCHEMATRON_CEN_PATH, SCHEMATRON_PEPPOL_PATH],
+    "nlcius": [SCHEMATRON_CEN_PATH, SCHEMATRON_NLCIUS_PATH],
+    "xrechnung": [SCHEMATRON_CEN_PATH, SCHEMATRON_XRECHNUNG_PATH],
+    "eusr": [SCHEMATRON_EUSR_PATH],
+    "tsr": [SCHEMATRON_TSR_PATH],
+    "aunz": [SCHEMATRON_PINT_AUNZ_PATH, SCHEMATRON_PINT_COMMON_PATH],
+}
+
 
 def get_file_and_schematron_paths(args: list[str]) -> tuple[str, list[str]]:
-    arg = args[0]
-    file_path = f"test_files/{arg}.xml"
+    file_path = args[0]
+    file_path = f"test_files/{file_path}"
 
     if len(args) >= 2:
         schematron_paths = SPECIAL_FILE_SCHEMATRON[args[1]]
     else:
-        schematron_paths = SPECIAL_FILE_SCHEMATRON.get(arg, [SCHEMATRON_CEN_PATH])
+        test_folder_name = file_path.split("/")[0]
+        raise NotImplementedError("TODO: detect what schematron to run by the folder name")
+        # assert test_folder_name in
+        # schematron_paths = SPECIAL_FILE_SCHEMATRON.get(file_path, [SCHEMATRON_CEN_PATH])
 
     return file_path, schematron_paths
 
@@ -50,8 +62,8 @@ PATH_ROOT_MAP = {
     SCHEMATRON_PEPPOL_PATH: "PEPPOL",
     SCHEMATRON_NLCIUS_PATH: "NLCIUS",
     SCHEMATRON_XRECHNUNG_PATH: "XRECHNUNG",
-    SCHEMATRON_AUNZ_1_PATH: "AUNZ1",
-    SCHEMATRON_AUNZ_2_PATH: "AUNZ2",
+    SCHEMATRON_PINT_AUNZ_PATH: "AUNZ1",
+    SCHEMATRON_PINT_COMMON_PATH: "AUNZ2",
     SCHEMATRON_EUSR_PATH: "EUSR",
     SCHEMATRON_TSR_PATH: "TSR",
 }

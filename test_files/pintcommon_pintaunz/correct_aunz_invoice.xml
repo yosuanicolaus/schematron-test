@@ -53,8 +53,7 @@
     <!-- Multiple attachments and external links may optionally be included -->
     <cac:AdditionalDocumentReference>
         <cbc:ID schemeID="SE">15622229-135</cbc:ID>
-        <cbc:DocumentTypeCode>130
-        </cbc:DocumentTypeCode><!-- Invoiced object (e.g. equipment serial nbr) can be included at invoice and/or line levels -->
+        <cbc:DocumentTypeCode>130</cbc:DocumentTypeCode><!-- Invoiced object (e.g. equipment serial nbr) can be included at invoice and/or line levels -->
     </cac:AdditionalDocumentReference>
     <cac:AdditionalDocumentReference>
         <!-- Example of an attached file -->

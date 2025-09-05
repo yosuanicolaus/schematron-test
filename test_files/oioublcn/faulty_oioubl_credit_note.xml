@@ -1,0 +1,206 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CreditNote xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>OIOUBL-2.1</cbc:CustomizationID>
+  <cbc:ProfileID schemeID="urn:oioubl:id:profileid-1.6" schemeAgencyID="320">Procurement-BilSim-1.0</cbc:ProfileID>
+  <cbc:ID>RINV/2025/00006</cbc:ID>
+  <cbc:IssueDate>2025-06-19</cbc:IssueDate>
+  <cbc:CreditNoteTypeCode listID="urn:oioubl:codelist:invoicetypecode-1.2" listAgencyID="320">381</cbc:CreditNoteTypeCode>
+  <cbc:DocumentCurrencyCode>DKK</cbc:DocumentCurrencyCode>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0184">DK10239559</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>DK Company</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+        <cbc:StreetName>G</cbc:StreetName>
+        <cbc:BuildingNumber>32</cbc:BuildingNumber>
+        <cbc:CityName>Aalborg</cbc:CityName>
+        <cbc:PostalZone>9430</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+          <cbc:Name>Denmark</cbc:Name>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>DK Company</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="DK:SE">DK10239559</cbc:CompanyID>
+        <cac:RegistrationAddress>
+          <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+          <cbc:StreetName>G</cbc:StreetName>
+          <cbc:BuildingNumber>32</cbc:BuildingNumber>
+          <cbc:CityName>Aalborg</cbc:CityName>
+          <cbc:PostalZone>9430</cbc:PostalZone>
+          <cac:Country>
+            <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+            <cbc:Name>Denmark</cbc:Name>
+          </cac:Country>
+        </cac:RegistrationAddress>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="urn:oioubl:id:taxschemeid-1.5">63</cbc:ID>
+          <cbc:Name>Moms</cbc:Name>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>DK Company</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="DK:CVR">DK10239559</cbc:CompanyID>
+        <cac:RegistrationAddress>
+          <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+          <cbc:StreetName>G</cbc:StreetName>
+          <cbc:BuildingNumber>32</cbc:BuildingNumber>
+          <cbc:CityName>Aalborg</cbc:CityName>
+          <cbc:PostalZone>9430</cbc:PostalZone>
+          <cac:Country>
+            <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+            <cbc:Name>Denmark</cbc:Name>
+          </cac:Country>
+        </cac:RegistrationAddress>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:ID>42</cbc:ID>
+        <cbc:Name>DK Company</cbc:Name>
+        <cbc:Telephone>+45 32 12 34 56</cbc:Telephone>
+        <cbc:ElectronicMail>info@company.dkexample.com</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0088">5798009811512</cbc:EndpointID>
+      <cac:PartyName>
+        <cbc:Name>DK comp2</cbc:Name>
+      </cac:PartyName>
+      <cac:PostalAddress>
+        <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+        <cbc:StreetName>jkfqdsmjf</cbc:StreetName>
+        <cbc:BuildingNumber>32</cbc:BuildingNumber>
+        <cbc:CityName>Copenhague</cbc:CityName>
+        <cbc:PostalZone>15454</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+          <cbc:Name>Denmark</cbc:Name>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>DK comp2</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="DK:SE">DK10007127</cbc:CompanyID>
+        <cac:RegistrationAddress>
+          <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+          <cbc:StreetName>jkfqdsmjf</cbc:StreetName>
+          <cbc:BuildingNumber>32</cbc:BuildingNumber>
+          <cbc:CityName>Copenhague</cbc:CityName>
+          <cbc:PostalZone>15454</cbc:PostalZone>
+          <cac:Country>
+            <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+            <cbc:Name>Denmark</cbc:Name>
+          </cac:Country>
+        </cac:RegistrationAddress>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="urn:oioubl:id:taxschemeid-1.5">63</cbc:ID>
+          <cbc:Name>Moms</cbc:Name>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>DK comp2</cbc:RegistrationName>
+        <cbc:CompanyID schemeID="DK:CVR">DK10007127</cbc:CompanyID>
+        <cac:RegistrationAddress>
+          <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+          <cbc:StreetName>jkfqdsmjf</cbc:StreetName>
+          <cbc:BuildingNumber>32</cbc:BuildingNumber>
+          <cbc:CityName>Copenhague</cbc:CityName>
+          <cbc:PostalZone>15454</cbc:PostalZone>
+          <cac:Country>
+            <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+            <cbc:Name>Denmark</cbc:Name>
+          </cac:Country>
+        </cac:RegistrationAddress>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:ID>43</cbc:ID>
+        <cbc:Name>DK comp2</cbc:Name>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cac:DeliveryLocation>
+      <cac:Address>
+        <cbc:AddressFormatCode listAgencyID="320" listID="urn:oioubl:codelist:addressformatcode-1.1">StructuredDK</cbc:AddressFormatCode>
+        <cbc:StreetName>jkfqdsmjf</cbc:StreetName>
+        <cbc:BuildingNumber>32</cbc:BuildingNumber>
+        <cbc:CityName>Copenhague</cbc:CityName>
+        <cbc:PostalZone>15454</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DK</cbc:IdentificationCode>
+          <cbc:Name>Denmark</cbc:Name>
+        </cac:Country>
+      </cac:Address>
+    </cac:DeliveryLocation>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode name="unknown">1</cbc:PaymentMeansCode>
+    <cbc:PaymentDueDate>2025-06-19</cbc:PaymentDueDate>
+    <cbc:PaymentID>RINV/2025/00006</cbc:PaymentID>
+  </cac:PaymentMeans>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="DKK">35.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="DKK">140.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="DKK">35.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="urn:oioubl:id:taxcategoryid-1.3" schemeAgencyID="320">StandardRated</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="urn:oioubl:id:taxschemeid-1.5">63</cbc:ID>
+          <cbc:Name>Moms</cbc:Name>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">140.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">35.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="DKK">175.00</cbc:TaxInclusiveAmount>
+    <cbc:PrepaidAmount currencyID="DKK">175.00</cbc:PrepaidAmount>
+    <cbc:PayableAmount currencyID="DKK">1.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:CreditNoteLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:CreditedQuantity unitCode="C7978">1.0</cbc:CreditedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">140.00</cbc:LineExtensionAmount>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="DKK">35.00</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="DKK">140.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="DKK">35.00</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="urn:oioubl:id:taxcategoryid-1.3" schemeAgencyID="320">StandardRated</cbc:ID>
+          <cbc:Percent>25.0</cbc:Percent>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="urn:oioubl:id:taxschemeid-1.5">63</cbc:ID>
+            <cbc:Name>Moms</cbc:Name>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description>[E-COM11] Cabinet with Doors</cbc:Description>
+      <cbc:Name>Cabinet with Doors</cbc:Name>
+      <cac:SellersItemIdentification>
+        <cbc:ID>E-COM11</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID schemeID="urn:oioubl:id:taxcategoryid-1.3" schemeAgencyID="320">StandardRated</cbc:ID>
+        <cbc:Percent>25.0</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="urn:oioubl:id:taxschemeid-1.5">63</cbc:ID>
+          <cbc:Name>Moms</cbc:Name>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">140.0</cbc:PriceAmount>
+    </cac:Price>
+  </cac:CreditNoteLine>
+</CreditNote>

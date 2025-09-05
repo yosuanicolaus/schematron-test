@@ -7,12 +7,12 @@ from rich.pretty import pprint
 from saxonche import PySaxonProcessor
 
 from schematron_lxml_const import (
-    SCHEMATRON_AUNZ_1_PATH,
-    SCHEMATRON_AUNZ_2_PATH,
     SCHEMATRON_CEN_PATH,
     SCHEMATRON_EUSR_PATH,
     SCHEMATRON_NLCIUS_PATH,
     SCHEMATRON_PEPPOL_PATH,
+    SCHEMATRON_PINT_AUNZ_PATH,
+    SCHEMATRON_PINT_COMMON_PATH,
     SCHEMATRON_TSR_PATH,
     SCHEMATRON_XRECHNUNG_PATH,
     get_file_and_schematron_paths,
@@ -25,8 +25,8 @@ SCHEMATRON_STYLESHEET_MAP = {
     SCHEMATRON_EUSR_PATH: "./validation/saxonche/eusr.xsl",
     SCHEMATRON_TSR_PATH: "./validation/saxonche/tsr.xsl",
     SCHEMATRON_XRECHNUNG_PATH: "./validation/saxonche/cen.xsl",  # TODO: add xrechnung.xsl if we can find it
-    SCHEMATRON_AUNZ_1_PATH: "./validation/saxonche/pintau1.xslt",
-    SCHEMATRON_AUNZ_2_PATH: "./validation/saxonche/pintau2.xslt",
+    SCHEMATRON_PINT_AUNZ_PATH: "./validation/saxonche/pintau1.xslt",
+    SCHEMATRON_PINT_COMMON_PATH: "./validation/saxonche/pintau2.xslt",
 }
 
 STYLESHEET_NAME_MAP = {}
